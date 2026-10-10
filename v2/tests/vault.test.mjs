@@ -45,7 +45,7 @@ test('altering encrypted record or binding to a different account is rejected', 
     decryptRecord({ ...parameters, record: { ...encrypted, version: 2 } }),
     /OperationError|operation-specific|decrypt/i
   );
-  const swapped = encrypted.ciphertext.slice(0, -1) + (encrypted.ciphertext.endsWith('A') ? 'B' : 'A');
+  const swapped = (encrypted.ciphertext[0] === 'A' ? 'B' : 'A') + encrypted.ciphertext.slice(1);
   await assert.rejects(
     decryptRecord({ ...parameters, record: { ...encrypted, ciphertext: swapped } })
   );
