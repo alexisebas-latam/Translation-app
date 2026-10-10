@@ -38,8 +38,12 @@ npm run test:ui
 
 Los controles del navegador también comprueban que nombres con caracteres HTML se presenten como texto. La identidad visual mantiene el carácter de Plazo, pero no es aún el sistema de diseño React final.
 
+## Supabase: base creada, aún sin conexión a la PWA
+
+Existe un proyecto Supabase **exclusivo para Plazo 2.0** en región São Paulo con tres tablas, RLS y migración versionada: [supabase/README.md](../supabase/README.md). El frontend experimental todavía usa autenticación y almacenamiento en memoria; **no se conecta a Supabase**.
+
 ## No implementado todavía
-Supabase Auth **real**, PostgreSQL, políticas RLS, sincronización real, persistencia de bóveda y sesiones, Hotmart, recuperación entre dispositivos físicos, colaboración, manejo de conflictos y auditoría externa. **La UI de registro y desbloqueo actual es simulada, no autenticación real.**
+Supabase Auth **real** e integración efectiva de la PWA con PostgreSQL/RLS ya configurado, sincronización real, persistencia de bóveda y sesiones en la nube, Hotmart, recuperación entre dispositivos físicos, colaboración, manejo de conflictos y auditoría externa. **La UI de registro y desbloqueo actual es simulada, no autenticación real.**
 
 ## Advertencias de privacidad
 El operador no debe recibir el secreto de recuperación ni la clave privada. El resultado de `stageLegacyMigration` se encuentra **descifrado en memoria**: jamás sincronizarlo antes de cifrarlo, ni enviarlo a logs o servicios de IA. La clave de recuperación es un secreto de alta entropía que el usuario debe guardar por su cuenta. Si pierde clave y método de recuperación, el contenido podría quedar irrecuperable. La PWA controlada por el operador puede publicar JavaScript comprometido; no afirmar E2EE comercial auditado en esta fase.
