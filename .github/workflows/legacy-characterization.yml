@@ -4,6 +4,7 @@ on:
     branches:
       - chore/plazo-v1-characterization
       - feat/plazo-v2-private-foundation
+      - main
   pull_request:
     paths:
       - 'tests/**'
@@ -13,6 +14,9 @@ on:
       - 'sw.js'
       - 'package.json'
       - 'playwright.config.mjs'
+      - 'playwright.live.config.mjs'
+      - 'vite.config.mjs'
+      - 'public/**'
       - '.github/workflows/legacy-characterization.yml'
   workflow_dispatch:
 
@@ -51,7 +55,11 @@ jobs:
           package-manager-cache: false
       - name: Install pinned browser test dependency
         run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Build Plazo 2.0 production bundle
+        run: npm run build
       - name: Install Chromium and OS dependencies
         run: npx playwright install --with-deps chromium
-      - name: Test desktop and mobile layouts
+      - name: Test demo desktop and mobile layouts
         run: npm run test:ui
+      - name: Test Supabase Auth UI on desktop and mobile
+        run: npm run test:live
