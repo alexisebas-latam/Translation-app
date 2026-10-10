@@ -1,7 +1,12 @@
 name: Deploy Plazo 2.0 to GitHub Pages
 
 on:
-  push:
+  # While Pages is configured to publish the main branch, its built-in
+  # "pages build and deployment" job also publishes raw source. Run our
+  # compiled Vite deployment AFTER that job, so compiled assets win.
+  workflow_run:
+    workflows: ["pages build and deployment"]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
