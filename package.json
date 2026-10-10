@@ -2,12 +2,17 @@
   "name": "plazo-legacy-characterization",
   "version": "0.0.0",
   "private": true,
-  "description": "Pruebas sin dependencias externas para documentar el comportamiento actual de Plazo 1.x, sin modificar la aplicación.",
+  "description": "Pruebas de Plazo 1.x y laboratorio aislado de Plazo 2.0 (sin servicios externos).",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/*.test.mjs v2/tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs v2/tests/*.test.mjs",
+    "demo": "node v2/demo/dev-server.mjs",
+    "test:ui": "playwright test"
   },
   "engines": {
     "node": ">=22"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0"
   }
 }
