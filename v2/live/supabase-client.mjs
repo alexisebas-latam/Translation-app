@@ -6,8 +6,8 @@
 import {createClient} from '@supabase/supabase-js';
 
 export function createPlazoSupabaseClient({url,key}={}){
-  const projectUrl=url ?? import.meta.env.VITE_SUPABASE_URL;
-  const publicKey=key ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  const projectUrl=url ?? import.meta.env.VITE_SUPABASE_URL ?? 'https://dvqalzgyivqgnenjutub.supabase.co';
+  const publicKey=key ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? 'sb_publishable_5gbCvxsJQNpqwxMFFmIqsQ_OnjQmyB_';
   if(!/^https:\/\/[\w-]+\.supabase\.co$/.test(projectUrl||'')){
     throw new Error('Configura VITE_SUPABASE_URL para el proyecto de Plazo.');
   }
