@@ -53,3 +53,42 @@ jobs:
       - name: Deploy compiled site
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify published site serves compiled HTML and JavaScript
+        env:
+          PUBLISHED_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          node --input-type=module <<'EOF'
+          const base = process.env.PUBLISHED_URL;
+          if (!base || !base.startsWith('https://alexisebas-latam.github.io/Translation-app/')) {
+            throw new Error('Unexpected GitHub Pages deployment URL');
+          }
+          let lastError;
+          for (let attempt = 1; attempt <= 12; attempt++) {
+            try {
+              const page = await fetch(base, { cache: 'no-store' });
+              if (!page.ok) throw new Error('HTTP ' + page.status);
+              const html = await page.text();
+              if (!html.includes('Plazo') || !html.includes('beta')) {
+                throw new Error('Published page is not Plazo 2.0');
+              }
+              const script = html.match(/<script[^>]+src="([^"]+assets\/[^"]+\.js)"/);
+              if (!script) throw new Error('Missing compiled Vite JS bundle; raw source was deployed');
+              const assetUrl = new URL(script[1], base);
+              if (assetUrl.origin !== new URL(base).origin) throw new Error('Asset URL changes origin');
+              const bundle = await fetch(assetUrl, { cache: 'no-store' });
+              if (!bundle.ok) throw new Error('JS bundle HTTP ' + bundle.status);
+              const code = await bundle.text();
+              if (!code.includes('dvqalzgyivqgnenjutub.supabase.co')) {
+                throw new Error('Live JS does not target Plazo Supabase');
+              }
+              console.log('Verified live release:', base, '| script:', assetUrl.pathname);
+              process.exit(0);
+            } catch (error) {
+              lastError = error;
+              console.log('Attempt', attempt, 'not ready:', error.message);
+              await new Promise(resolve => setTimeout(resolve, 4000));
+            }
+          }
+          throw lastError;
+          EOF
