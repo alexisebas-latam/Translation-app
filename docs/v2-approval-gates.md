@@ -8,7 +8,7 @@
 - No copiar datos reales ni instalar scripts no verificados.
 
 ## Requiere aprobación antes de conectar, publicar o gastar
-1. **Supabase**: el usuario crea o autoriza un proyecto, región, gasto esperado y proveedor de Auth. Crear tablas/políticas RLS solo después de aprobar esquema/infraestructura. Usar secretos configurados en panel del proveedor, no por chat.
+1. **Supabase (aprobación inicial COMPLETADA 2026-10-10):** ya existe proyecto Plazo 2.0 Free en São Paulo, con migración inicial de tablas cifradas/RLS aplicada. Cualquier upgrade, proveedor externo, gasto adicional o cambio de producción requiere autorización nueva. Nunca exponer claves secretas, y configurar URL/clave publicable con cuidado al integrar el frontend.
 2. **Auth**: decidir método (email/passkey/MFA), mensajes transaccionales, recuperación y dominio. Nunca confundir recuperación de cuenta con recuperación de bóveda cifrada.
 3. **Cloudflare**: confirmar sitio y rama desplegada; no cambiar la rama de producción, variables secretas, registros DNS ni dominios sin aprobación.
 4. **Hotmart**: aprobar producto, ciclos de cobro, política Free/Pro, reembolsos y enlace seguro entre compra y usuario. Webhooks solo después de crear credenciales y probar sin dinero real cuando corresponda.
