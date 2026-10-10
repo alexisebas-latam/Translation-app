@@ -6,8 +6,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+const html = fs.readFileSync(new URL('../legacy/index.html', import.meta.url), 'utf8');
+const sw = fs.readFileSync(new URL('../legacy/sw.js', import.meta.url), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(new URL('../manifest.json', import.meta.url), 'utf8'));
 
 function between(start, end) {
