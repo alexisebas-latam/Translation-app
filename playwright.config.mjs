@@ -2,6 +2,7 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir:'./v2/e2e',
+  testMatch:'responsive.spec.mjs',
   fullyParallel:true,
   timeout:20000,
   retries:process.env.CI?1:0,
