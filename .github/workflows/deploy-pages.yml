@@ -1,17 +1,13 @@
 name: Deploy Plazo 2.0 to GitHub Pages
 
 on:
-  # While Pages is configured to publish the main branch, its built-in
-  # "pages build and deployment" job also publishes raw source. Run our
-  # compiled Vite deployment AFTER that job, so compiled assets win.
-  workflow_run:
-    workflows: ["pages build and deployment"]
-    types: [completed]
+  push:
     branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
@@ -54,6 +50,47 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist/
+
+      - name: Wait for built-in Pages branch deployment
+        if: github.event_name == 'push'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          COMMIT_SHA: ${{ github.sha }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          node --input-type=module <<'EOF'
+          // The repository still has "Deploy from a branch" enabled.
+          // The automatically generated Pages run can overwrite built assets.
+          // Wait for that run to finish BEFORE deploying the compiled bundle.
+          const api = 'https://api.github.com/repos/' +
+            process.env.GITHUB_REPOSITORY +
+            '/actions/runs?head_sha=' + process.env.COMMIT_SHA + '&per_page=30';
+          for(let attempt=0; attempt<75; attempt++){
+            const response=await fetch(api,{
+              headers:{
+                Authorization:'Bearer '+process.env.GITHUB_TOKEN,
+                Accept:'application/vnd.github+json',
+                'X-GitHub-Api-Version':'2022-11-28'
+              }
+            });
+            if(!response.ok)throw new Error('Cannot inspect branch Pages run: '+response.status);
+            const results=await response.json();
+            const branchDeploys=results.workflow_runs.filter(run=>
+              run.name==='pages build and deployment' &&
+              run.head_sha===process.env.COMMIT_SHA &&
+              run.event==='dynamic'
+            );
+            if(branchDeploys.length&&branchDeploys.every(run=>run.status==='completed')){
+              if(branchDeploys.some(run=>run.conclusion!=='success'))
+                throw new Error('Built-in branch Pages deploy failed');
+              console.log('Built-in Pages deploy finished; safe to publish Vite bundle.');
+              process.exit(0);
+            }
+            console.log('Waiting for branch Pages deploy, attempt',attempt+1);
+            await new Promise(resolve=>setTimeout(resolve,3000));
+          }
+          throw new Error('Timed out waiting for branch Pages deployment. Switch Pages Source to GitHub Actions.');
+          EOF
 
       - name: Deploy compiled site
         id: deployment
