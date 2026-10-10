@@ -63,3 +63,11 @@ jobs:
         run: npm run test:ui
       - name: Test Supabase Auth UI on desktop and mobile
         run: npm run test:live
+      - name: Archive release bundle for Cloudflare Pages
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: plazo-v2-dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
