@@ -2,8 +2,12 @@
 
 Este es el repositorio CANÓNICO de la aplicación Plazo. Repositorio de estándares: https://github.com/alexisebas-latam/Desarrollo-apps-IA (privado). Todo cambio de código, tests, configuración, migraciones o despliegue de Plazo se realiza **aquí**, jamás en el hub.
 
-## Esta rama
-`chore/plazo-v1-characterization` se limita a documentación, pruebas de comportamiento actual y protección contra subida accidental de datos. No alterar `index.html`, `sw.js`, iconos ni `manifest.json` en esta etapa. No crear despliegues.
+## Ramas de trabajo
+- `chore/plazo-v1-characterization`: documentación y pruebas del comportamiento anterior.
+- `feat/plazo-v2-private-foundation`: módulos experimentales en `v2/`, autenticación simulada, bóveda local y diseño responsive PC/móvil.
+- `main`: versión original intacta. **No fusionar ni desplegar las ramas experimentales sin revisión y autorización.**
+
+No alterar `index.html`, `sw.js`, iconos ni `manifest.json` de Plazo 1.x en esta etapa. No conectar cuentas reales ni crear despliegues.
 
 ## Reglas obligatorias
 - Preservar Plazo 1.x y su almacenamiento IndexedDB. Nunca tocar datos reales del navegador desde GitHub.

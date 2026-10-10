@@ -1,0 +1,22 @@
+/* Supplemental styles for authenticated Plazo 2.0 responsive entrypoint */
+.mode-switch{display:flex;gap:6px;padding:5px;background:#F0F4EF;border-radius:11px;margin:0 0 23px}
+.mode-button{flex:1;border:0;background:transparent;color:#58776B;padding:11px;border-radius:8px;font-size:13px;font-weight:750}
+.mode-button.selected{background:white;color:#0B6F60;box-shadow:0 2px 9px rgba(10,45,35,.08)}
+.auth-card form[hidden]{display:none}
+.auth-card #showForgot,.auth-card #backLogin{display:block;margin:16px 0 0}
+.page-heading .heading-actions{display:flex;gap:9px;align-items:center}
+.recovery-output{display:block;overflow-wrap:anywhere;word-break:break-all;font-size:14px;padding:18px 15px;background:#EAF5EE;color:#164D3F;border-radius:12px;letter-spacing:0.8px;border:1px solid #C8E4D2}
+.checkbox-line{display:flex;gap:10px;align-items:flex-start;margin:20px 0 16px!important;font-size:13px!important;line-height:1.5}
+.checkbox-line input{width:20px;height:20px;min-height:20px;flex-shrink:0;margin:0}
+#confirmRecovery{width:100%}
+button:disabled{cursor:not-allowed;opacity:.55}
+#accountEmail,#signedEmail{overflow-wrap:anywhere}
+@media(max-width:780px){
+ .page-heading .heading-actions{width:100%;flex-wrap:wrap}
+ .page-heading .heading-actions .btn{width:auto;flex:1}
+}
+@media(max-width:430px){
+ .page-heading .heading-actions{flex-direction:column}
+ .page-heading .heading-actions .btn{width:100%}
+ .mode-button{font-size:12px}
+}

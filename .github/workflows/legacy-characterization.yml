@@ -1,15 +1,22 @@
-name: Plazo 1.x characterization
+name: Plazo tests — legacy + responsive v2
 on:
   push:
     branches:
       - chore/plazo-v1-characterization
+      - feat/plazo-v2-private-foundation
+      - main
   pull_request:
     paths:
       - 'tests/**'
+      - 'v2/**'
       - 'index.html'
       - 'manifest.json'
       - 'sw.js'
       - 'package.json'
+      - 'playwright.config.mjs'
+      - 'playwright.live.config.mjs'
+      - 'vite.config.mjs'
+      - 'public/**'
       - '.github/workflows/legacy-characterization.yml'
   workflow_dispatch:
 
@@ -17,7 +24,7 @@ permissions:
   contents: read
 
 jobs:
-  legacy-characterization:
+  characterization:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -30,5 +37,29 @@ jobs:
         with:
           node-version: '22'
           package-manager-cache: false
-      - name: Run dependency-free characterization tests
+      - name: Run isolated Node tests
         run: npm test
+
+  responsive-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Install pinned browser test dependency
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Build Plazo 2.0 production bundle
+        run: npm run build
+      - name: Install Chromium and OS dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Test demo desktop and mobile layouts
+        run: npm run test:ui
+      - name: Test Supabase Auth UI on desktop and mobile
+        run: npm run test:live

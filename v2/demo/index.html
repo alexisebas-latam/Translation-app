@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B6F60">
+<title>Plazo 2.0 — Laboratorio de privacidad</title>
+<link rel="stylesheet" href="./styles.css">
+<script type="module" src="./main.mjs"></script>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar" aria-label="Navegación de escritorio">
+    <div class="logo"><span class="logo-mark" aria-hidden="true">P</span><span>pla<span class="logo-accent">zo.</span></span></div>
+    <p class="side-eyebrow">LABORATORIO · v2.0</p>
+    <nav class="side-nav" aria-label="Secciones">
+      <button type="button" class="nav-link active" data-screen="workspace" aria-current="page"><span aria-hidden="true">▦</span> Mi espacio</button>
+      <button type="button" class="nav-link" data-screen="privacy"><span aria-hidden="true">♧</span> Privacidad</button>
+    </nav>
+    <div class="side-bottom">
+      <span class="signal"><span class="signal-dot" aria-hidden="true"></span> Sin conexión a la nube</span>
+      <p>Los datos de este laboratorio existen solo mientras la página permanece abierta.</p>
+      <small>Entorno de prueba · No usar información real</small>
+    </div>
+  </aside>
+
+  <div class="page">
+    <header class="topbar">
+      <div><p class="eyebrow" id="deviceLabel">DISPOSITIVO A · SIMULADO</p><p class="top-title">Tu espacio, tus datos.</p></div>
+      <div class="top-actions">
+        <span class="demo-badge">DEMO LOCAL</span>
+        <span class="avatar" aria-label="Perfil de demostración">P</span>
+      </div>
+    </header>
+    <main id="main" class="content">
+      <section id="welcome" class="welcome">
+        <div class="intro">
+          <span class="section-kicker">UNA NUEVA FORMA DE TRABAJAR</span>
+          <h1>Menos administración.<br><em>Más tranquilidad.</em></h1>
+          <p>Un ensayo de cómo Plazo protegerá tu información profesional, con una experiencia adaptada a escritorio y celular.</p>
+        </div>
+        <div class="auth-grid">
+          <section class="surface auth-card" aria-labelledby="createTitle" id="createPanel">
+            <div class="step-mark">01 / INICIO</div>
+            <h2 id="createTitle">Crea tu cuenta de prueba</h2>
+            <p>Generaremos un identificador, un código de acceso temporal y una clave de recuperación independiente.</p>
+            <form id="registerForm">
+              <label for="displayName">Nombre para la demostración</label>
+              <input id="displayName" name="displayName" placeholder="Ej. Traductor de prueba" maxlength="80" required autocomplete="off">
+              <button class="btn btn-primary" type="submit">Crear espacio de prueba <span aria-hidden="true">↗</span></button>
+            </form>
+          </section>
+          <section class="surface auth-card" id="loginPanel" aria-labelledby="loginTitle" hidden>
+            <div class="step-mark">RECUPERACIÓN · OTRO DISPOSITIVO</div>
+            <h2 id="loginTitle">Continúa donde quedaste</h2>
+            <p>Introduce los códigos de prueba que copiaste. El servicio simulado verifica el acceso; la clave de recuperación solo se usa en este dispositivo.</p>
+            <form id="loginForm">
+              <label for="accountId">Identificador de cuenta</label>
+              <input id="accountId" name="accountId" autocomplete="off" required spellcheck="false">
+              <label for="accessCode">Código de acceso simulado</label>
+              <input id="accessCode" name="accessCode" type="password" autocomplete="off" required>
+              <label for="recoveryCode">Clave de recuperación de la bóveda</label>
+              <input id="recoveryCode" name="recoveryCode" type="password" autocomplete="off" required>
+              <button class="btn btn-primary" type="submit">Entrar y desbloquear <span aria-hidden="true">↗</span></button>
+            </form>
+          </section>
+          <aside class="info-surface" aria-label="Beneficios del diseño">
+            <span class="privacy-symbol" aria-hidden="true">✳</span>
+            <h3>Confidencialidad por diseño.</h3>
+            <p>Los nombres de clientes y demás datos comerciales se cifran antes de enviarse a un almacenamiento remoto.</p>
+            <div class="info-divider"></div>
+            <p class="caption-light">Este laboratorio utiliza una nube simulada en memoria. No es autenticación real ni una auditoría criptográfica.</p>
+          </aside>
+        </div>
+      </section>
+
+      <section id="workspace" hidden>
+        <div class="page-heading">
+          <div><p class="section-kicker">PANEL DE DEMOSTRACIÓN</p><h1>Tu día, <em>en orden.</em></h1><p>Clientes de prueba protegidos mediante cifrado local.</p></div>
+          <button class="btn btn-soft" type="button" id="newDevice">Probar otro dispositivo <span aria-hidden="true">↗</span></button>
+        </div>
+        <div class="stats-grid">
+          <div class="surface stat"><span>Clientes registrados</span><strong id="clientCount">0</strong><small>Solo tu espacio</small></div>
+          <div class="surface stat"><span>Bóveda privada</span><strong class="stat-label">Desbloqueada</strong><small>Clave solo en este dispositivo</small></div>
+          <div class="surface stat"><span>Sincronización</span><strong class="stat-label">Simulada</strong><small>Datos cifrados en memoria</small></div>
+        </div>
+
+        <div class="workspace-grid">
+          <section class="surface work-card">
+            <div class="section-header"><div><p class="step-mark">TUS CONTACTOS</p><h2>Clientes</h2></div><span class="count-tag" id="clientTag">0 registros</span></div>
+            <form id="clientForm" class="client-form">
+              <label for="clientName">Nombre de cliente ficticio</label>
+              <div class="input-line">
+                <input id="clientName" name="clientName" placeholder="Ej. Agencia Horizonte" maxlength="120" required autocomplete="off">
+                <button class="btn btn-primary" type="submit">Añadir <span aria-hidden="true">＋</span></button>
+              </div>
+            </form>
+            <ul id="clientList" class="client-list" aria-label="Clientes cifrados">
+              <li class="empty-state">Todavía no hay clientes. Agrega uno ficticio.</li>
+            </ul>
+          </section>
+          <section class="surface work-card" id="recoveryPanel" hidden>
+            <p class="step-mark">IMPORTANTE · SOLO UNA VEZ</p>
+            <h2>Guarda tus claves de prueba.</h2>
+            <p class="subcopy">Para simular otro dispositivo tendrás que copiar estos tres valores. En este laboratorio las claves desaparecen al cerrar la página.</p>
+            <div class="secret-item"><label>Identificador de cuenta</label><code id="shownAccountId"></code><button type="button" class="text-action" data-copy="shownAccountId">Copiar identificador</button></div>
+            <div class="secret-item"><label>Código de acceso (simulado)</label><code id="shownAccessCode"></code><button type="button" class="text-action" data-copy="shownAccessCode">Copiar código</button></div>
+            <div class="secret-item"><label>Clave de recuperación privada</label><code id="shownRecovery"></code><button type="button" class="text-action" data-copy="shownRecovery">Copiar clave</button></div>
+            <p class="tiny-note">No es recomendable guardar estas claves juntas en producción. La experiencia definitiva incluirá un asistente seguro de recuperación.</p>
+          </section>
+          <section class="surface work-card" id="recoveredPanel" hidden>
+            <p class="step-mark">RECUPERACIÓN COMPLETADA</p>
+            <h2>Acceso restaurado.</h2>
+            <p class="subcopy">Has recuperado los mismos clientes desde un segundo dispositivo simulado sin entregar la clave de descifrado al almacenamiento remoto.</p>
+            <div class="success-line">✓ Los registros se descifraron localmente.</div>
+            <button type="button" class="btn btn-soft" id="logout">Cerrar sesión simulada</button>
+          </section>
+        </div>
+      </section>
+
+      <section id="privacy" hidden>
+        <div class="page-heading"><div><p class="section-kicker">PRIVACIDAD DESDE EL PRIMER DÍA</p><h1>La confianza <em>se diseña.</em></h1><p>Identidad, autorización y cifrado son capas distintas.</p></div></div>
+        <div class="privacy-grid">
+          <article class="surface privacy-card"><span class="privacy-index">01</span><h2>Tu cuenta</h2><p>La versión final usará autenticación real y controles de acceso en el backend. Aquí solo existe un proveedor simulado.</p></article>
+          <article class="surface privacy-card"><span class="privacy-index">02</span><h2>Tus datos</h2><p>Los registros se cifran en el dispositivo antes de almacenarlos en una nube simulada. El operador no necesita conocer los nombres de tus clientes.</p></article>
+          <article class="surface privacy-card"><span class="privacy-index">03</span><h2>Tu recuperación</h2><p>La clave para recuperar información es independiente de la sesión. Si se pierde, una recuperación de login no basta para descifrar la bóveda.</p></article>
+        </div>
+        <p class="footnote">Limitación importante: una PWA cuyo código puede cambiar el proveedor sigue expuesta a código comprometido o malicioso. Este proyecto necesita una revisión de seguridad antes de ofrecer garantías comerciales de cifrado extremo a extremo.</p>
+      </section>
+      <p class="feedback" id="feedback" role="status" aria-live="polite"></p>
+    </main>
+    <footer class="footer">Plazo 2.0 · Experimento de interfaz y privacidad · Sin servicios conectados</footer>
+  </div>
+  <nav class="mobile-nav" aria-label="Navegación móvil">
+    <button class="mobile-link active" type="button" data-screen="workspace" aria-current="page"><span aria-hidden="true">▦</span>Espacio</button>
+    <button class="mobile-link" type="button" data-screen="privacy"><span aria-hidden="true">♧</span>Privacidad</button>
+  </nav>
+</div>
+</body>
+</html>
