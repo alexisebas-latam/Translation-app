@@ -1,0 +1,19 @@
+# No subir respaldos ni información de clientes/traductores.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+backups/
+private-data/
+plazo-respaldo-*.json
+plazo-respaldo-*.zip
+*.sqlite
+*.db
+node_modules/
+coverage/
+playwright-report/
+test-results/
+.DS_Store
