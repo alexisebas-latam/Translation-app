@@ -37,6 +37,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || '9b667cd94f6eaf21a5cc5dd13f0b51c8' }}
         run: node scripts/cloudflare-project.mjs
       - name: Deploy compiled assets to main
+        if: steps.project.outputs.native_git != 'true'
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
