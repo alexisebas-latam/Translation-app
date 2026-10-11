@@ -116,3 +116,11 @@ actual no ofrece acceso administrativo a ese ajuste. Cloudflare es el principal.
 
 Plazo 1.x permanece en `legacy/`. Un rollback requiere un commit explícito y
 revisión de cachés; no borrar tablas ni bóvedas de Supabase.
+
+## Mejora de clientes y navegación
+
+Interfaz compacta de Inicio / Clientes / Privacidad, menú accesible de cuenta,
+búsqueda local y formularios para agregar/editar clientes. Eliminación solo tras
+confirmación explícita. Las ediciones vuelven a cifrar el contenido y verifican
+la versión previa para detectar escrituras concurrentes. No se añadieron tablas
+ni se migraron datos. Proyectos y finanzas siguen fuera de esta beta.

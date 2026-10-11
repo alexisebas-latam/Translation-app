@@ -17,6 +17,16 @@ function checkUser(user){
   if(user.is_anonymous)throw new Error('Las cuentas anónimas no están habilitadas en Plazo.');
   return user;
 }
+function checkClient(name,type){
+  if(typeof name!=='string'||!name.trim()||name.trim().length>120)
+    throw new TypeError('Nombre de cliente inválido.');
+  if(typeof type!=='string'||!type.trim()||type.trim().length>80)
+    throw new TypeError('Tipo de cliente inválido.');
+}
+function checkClientId(id){
+  if(typeof id!=='string'||!id.startsWith('client_')||!UUID.test(id.slice(7)))
+    throw new TypeError('Identificador de cliente inválido.');
+}
 export function createPlazoCloud(supabase){
   if(!supabase?.auth?.getUser || !supabase?.from)throw new TypeError('Falta un cliente Supabase válido.');
   let workspaceId=null,userId=null,key=null;
@@ -99,10 +109,7 @@ export function createPlazoCloud(supabase){
     async addClient(name,type='Agencia'){
       if(!key||!workspaceId)throw new Error('Desbloquea la bóveda antes de guardar.');
       const user=await authenticated();
-      if(typeof name!=='string'||!name.trim()||name.trim().length>120)
-        throw new TypeError('Nombre de cliente inválido.');
-      if(typeof type!=='string'||!type.trim()||type.trim().length>80)
-        throw new TypeError('Tipo de cliente inválido.');
+      checkClient(name,type);
       const id='client_'+globalThis.crypto.randomUUID();
       const record=await encryptRecord({contentKey:key,workspaceId,recordId:id,
         value:{name:name.trim(),type:type.trim(),createdAt:new Date().toISOString()}});
@@ -112,6 +119,40 @@ export function createPlazoCloud(supabase){
         format_version:record.format,record_version:record.version,
         nonce:record.nonce,ciphertext:record.ciphertext
       }),'Guardar registro cifrado');
+      return id;
+    },
+    async updateClient(id,name,type='Cliente'){
+      if(!key||!workspaceId)throw new Error('Desbloquea la bóveda antes de editar.');
+      checkClientId(id);checkClient(name,type);
+      const user=await authenticated();
+      const row=unwrap(await supabase.from('plazo_encrypted_records')
+        .select('workspace_id,owner_id,record_id,format_version,record_version,nonce,ciphertext')
+        .eq('workspace_id',workspaceId).eq('owner_id',user.id).eq('record_id',id).maybeSingle(),'Consultar cliente');
+      if(!row)throw new Error('El cliente ya no existe. Actualiza la lista.');
+      if(row.owner_id!==user.id||row.workspace_id!==workspaceId||row.record_id!==id)
+        throw new Error('El registro no pertenece a esta cuenta.');
+      const previous=await decryptRecord({contentKey:key,workspaceId,recordId:id,record:{
+        format:row.format_version,workspaceId,recordId:id,version:row.record_version,
+        nonce:row.nonce,ciphertext:row.ciphertext
+      }});
+      const record=await encryptRecord({contentKey:key,workspaceId,recordId:id,
+        version:row.record_version+1,value:{...previous,name:name.trim(),type:type.trim()}});
+      const saved=unwrap(await supabase.from('plazo_encrypted_records').update({
+        format_version:record.format,record_version:record.version,
+        nonce:record.nonce,ciphertext:record.ciphertext
+      }).eq('workspace_id',workspaceId).eq('owner_id',user.id).eq('record_id',id)
+        .eq('record_version',row.record_version).select('record_id').maybeSingle(),'Editar cliente');
+      if(saved?.record_id!==id)throw new Error('El cliente cambió en otro dispositivo. Actualiza antes de editar.');
+      return id;
+    },
+    async deleteClient(id){
+      if(!key||!workspaceId)throw new Error('Desbloquea la bóveda antes de eliminar.');
+      checkClientId(id);
+      const user=await authenticated();
+      const deleted=unwrap(await supabase.from('plazo_encrypted_records').delete()
+        .eq('workspace_id',workspaceId).eq('owner_id',user.id).eq('record_id',id)
+        .select('record_id').maybeSingle(),'Eliminar cliente');
+      if(deleted?.record_id!==id)throw new Error('El cliente ya no existe o no pudo eliminarse. Actualiza la lista.');
       return id;
     },
     async listClients(){

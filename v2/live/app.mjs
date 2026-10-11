@@ -4,7 +4,10 @@ import {createPlazoCloud} from './store.mjs';
 const supabase=createPlazoSupabaseClient();
 const cloud=createPlazoCloud(supabase);
 const $=id=>document.getElementById(id);
-const panes=['welcome','vaultAccess','workspace','privacy'];
+const panes=['welcome','vaultAccess','workspace','clients','privacy'];
+let clients=[];
+let editingId=null;
+let deletingId=null;
 let screen='workspace';
 let stage='login'; // login / signup / forgot / reset / create / unlock / newSecret / open
 let email='';
@@ -38,6 +41,9 @@ function showPane(id){
  }
 }
 function render(){
+ $('menuAccount').hidden=!loggedIn;
+ $('signedEmail').textContent=email;
+ $('pageTitle').textContent={workspace:'Tu espacio de trabajo',clients:'Clientes',privacy:'Privacidad'}[screen]||'Plazo';
  if(screen==='privacy'){showPane('privacy');return;}
  if(!loggedIn){
    showPane('welcome');
@@ -60,11 +66,13 @@ function render(){
    $('newRecoveryPanel').hidden=stage!=='newSecret';
    return;
  }
- showPane('workspace');
- $('signedEmail').textContent=email;
+ showPane(screen==='clients'?'clients':'workspace');
 }
 function selectScreen(next){
+ if(!['workspace','clients','privacy'].includes(next))return;
  screen=next;
+ closeMenu();
+ closeClientForm();
  render();
  feedback('');
 }
@@ -79,7 +87,7 @@ async function refreshAuth(){
  const {data,error}=await supabase.auth.getUser();
  if(nonce!==authLoad)return;
  if(error||!data?.user||data.user.is_anonymous){
-   loggedIn=false;email='';cloud.lock();
+   loggedIn=false;email='';cloud.lock();clearPrivateUI();
    if(!passwordRecoveryMode)stage='login';else stage='reset';
    render();return;
  }
@@ -103,34 +111,93 @@ async function refreshAuth(){
 async function operate(buttonOrForm,action){
  if(doing)return;
  doing=true;busy(buttonOrForm,true);
+ buttonOrForm?.setAttribute('aria-busy','true');
  try{await action();}
  catch(err){feedback(err?.message||'No se pudo completar la operación.',true);}
- finally{busy(buttonOrForm,false);doing=false;}
+ finally{busy(buttonOrForm,false);buttonOrForm?.removeAttribute('aria-busy');doing=false;}
 }
 function validEmail(s){return typeof s==='string'&&s.includes('@')&&s.length<=254;}
-async function loadClients(){
- if(!cloud.ready)return;
- const result=await cloud.listClients();
- $('clientCount').textContent=String(result.length);
- $('clientTag').textContent=result.length+' registro'+(result.length===1?'':'s');
- const list=$('clientList');
- list.replaceChildren();
- if(!result.length){
-  const item=document.createElement('li');
-  item.className='empty-state';item.textContent='Aún no tienes clientes. Agrega el primero.';list.append(item);return;
+function closeMenu(){
+ if($('appMenu').open)$('appMenu').close();
+ $('menuButton').setAttribute('aria-expanded','false');
+}
+function closeClientForm(){
+ $('clientForm').hidden=true;$('clientForm').reset();editingId=null;
+ $('clientFormError').hidden=true;
+}
+function clearPrivateUI(){
+ clients=[];$('clientList').replaceChildren();$('clientCount').textContent='0';
+ $('clientSearch').value='';closeClientForm();
+ if($('deleteDialog').open)$('deleteDialog').close();
+ deletingId=null;$('deleteClientName').textContent='';
+}
+function openClientForm(client=null){
+ if(!loggedIn||!cloud.ready){selectScreen('clients');feedback('Desbloquea tu bóveda para gestionar clientes.');return;}
+ screen='clients';closeMenu();render();
+ editingId=client?.id||null;
+ $('clientFormTitle').textContent=client?'Editar cliente':'Nuevo cliente';
+ $('saveClient').textContent=client?'Guardar cambios':'Guardar cliente';
+ $('clientName').value=client?.name||'';$('clientType').value=client?.type||'Cliente';
+ $('clientFormError').hidden=true;$('clientForm').hidden=false;
+ $('clientName').focus();$('clientForm').scrollIntoView({block:'nearest'});
+}
+function requestDelete(client){
+ if(doing)return;
+ deletingId=client.id;$('deleteClientName').textContent=client.name;
+ $('deleteError').hidden=true;$('deleteDialog').showModal();
+ $('cancelDelete').focus();
+}
+function renderClients(){
+ const query=$('clientSearch').value.trim().toLocaleLowerCase('es');
+ const filtered=clients.filter(c=>(c.name+' '+c.type).toLocaleLowerCase('es').includes(query));
+ const list=$('clientList');list.replaceChildren();
+ $('clientCount').textContent=String(clients.length);
+ $('clientTag').textContent=clients.length===1?'1 cliente':clients.length+' clientes';
+ $('homePrompt').textContent=clients.length?'Tus contactos, a mano':'Empieza con tu primer cliente';
+ $('homeDescription').textContent=clients.length?'Busca un cliente o actualiza sus datos cuando lo necesites.':'Guarda sus datos y ten tus contactos a mano.';
+ if(!filtered.length){
+  const item=document.createElement('li');item.className='empty-state';
+  const title=document.createElement('strong');title.textContent=query?'Sin resultados':'Todavía no tienes clientes';
+  const text=document.createElement('span');text.textContent=query?'Prueba con otro nombre o tipo de cliente.':'Pulsa "Añadir cliente" para guardar tu primer contacto.';
+  item.append(title,text);list.append(item);return;
  }
- for(const client of result){
-  const item=document.createElement('li');
-  item.className='client-row';
-  const avatar=document.createElement('span');
-  avatar.className='client-avatar';
-  avatar.textContent=client.name.slice(0,1).toLocaleUpperCase('es-CL');
-  const content=document.createElement('div');
+ for(const client of filtered){
+  const item=document.createElement('li');item.className='client-row';
+  const avatar=document.createElement('span');avatar.className='client-avatar';
+  avatar.setAttribute('aria-hidden','true');avatar.textContent=client.name.slice(0,1).toLocaleUpperCase('es-CL');
+  const content=document.createElement('div');content.className='client-info';
   const name=document.createElement('strong');name.textContent=client.name;
-  const type=document.createElement('small');type.textContent=(client.type||'Cliente')+' · Cifrado';
-  content.append(name,type);item.append(avatar,content);list.append(item);
+  const type=document.createElement('small');type.textContent=client.type||'Cliente';
+  content.append(name,type);
+  const actions=document.createElement('div');actions.className='client-actions';
+  const edit=document.createElement('button');edit.type='button';edit.className='row-action';edit.textContent='Editar';
+  edit.setAttribute('aria-label','Editar '+client.name);edit.addEventListener('click',()=>openClientForm(client));
+  const remove=document.createElement('button');remove.type='button';remove.className='row-action danger';remove.textContent='Eliminar';
+  remove.setAttribute('aria-label','Eliminar '+client.name);remove.addEventListener('click',()=>requestDelete(client));
+  actions.append(edit,remove);item.append(avatar,content,actions);list.append(item);
  }
 }
+async function loadClients(){
+ if(!cloud.ready)return;
+ clients=await cloud.listClients();renderClients();
+}
+$('menuButton').addEventListener('click',()=>{$('appMenu').showModal();$('menuButton').setAttribute('aria-expanded','true');});
+$('closeMenu').addEventListener('click',closeMenu);
+$('appMenu').addEventListener('close',()=>{$('menuButton').setAttribute('aria-expanded','false');});
+$('appMenu').addEventListener('click',event=>{if(event.target===$('appMenu')){const box=$('appMenu').getBoundingClientRect();if(event.clientX<box.left)closeMenu();}});
+for(const btn of document.querySelectorAll('[data-new-client]'))btn.addEventListener('click',()=>openClientForm());
+$('cancelClient').addEventListener('click',closeClientForm);
+$('cancelClientBottom').addEventListener('click',closeClientForm);
+$('clientSearch').addEventListener('input',renderClients);
+$('cancelDelete').addEventListener('click',()=>{$('deleteDialog').close();});
+$('deleteDialog').addEventListener('close',()=>{deletingId=null;$('deleteClientName').textContent='';});
+$('confirmDelete').addEventListener('click',event=>void operate(event.currentTarget,async()=>{
+ if(!deletingId)return;
+ const id=deletingId;
+ try{await cloud.deleteClient(id);}catch(error){$('deleteError').textContent=error.message;$('deleteError').hidden=false;throw error;}
+ $('deleteDialog').close();if(editingId===id)closeClientForm();
+ await loadClients();feedback('Cliente eliminado.');
+}));
 for(const btn of document.querySelectorAll('[data-screen]')){
  btn.addEventListener('click',()=>selectScreen(btn.dataset.screen));
 }
@@ -221,16 +288,18 @@ $('clientForm').addEventListener('submit',event=>{
  event.preventDefault();const form=event.currentTarget;
  void operate(form,async()=>{
   const name=$('clientName').value;
-  await cloud.addClient(name,'Cliente');
-  form.reset();await loadClients();
-  feedback('Cliente guardado en Supabase como registro cifrado.');
+  const type=$('clientType').value;const edited=Boolean(editingId);
+  try{if(editingId)await cloud.updateClient(editingId,name,type);else await cloud.addClient(name,type);}
+  catch(error){$('clientFormError').textContent=error.message;$('clientFormError').hidden=false;throw error;}
+  closeClientForm();await loadClients();
+  feedback(edited?'Cambios guardados.':'Cliente guardado.');
  });
 });
 $('lockButton').addEventListener('click',()=>{
- cloud.lock();hideSecret();stage='unlock';render();feedback('Bóveda bloqueada en este dispositivo.');
+ cloud.lock();hideSecret();clearPrivateUI();closeMenu();stage='unlock';screen='workspace';render();feedback('Bóveda bloqueada en este dispositivo.');
 });
 $('signOutButton').addEventListener('click',event=>void operate(event.currentTarget,async()=>{
- cloud.lock();hideSecret();await cloud.signOut();
+ cloud.lock();hideSecret();clearPrivateUI();closeMenu();await cloud.signOut();
  authLoad+=1;loggedIn=false;email='';stage='login';render();feedback('Sesión cerrada.');
 }));
 const {data:{subscription}}=supabase.auth.onAuthStateChange((event)=>{
@@ -238,7 +307,7 @@ const {data:{subscription}}=supabase.auth.onAuthStateChange((event)=>{
   passwordRecoveryMode=true;loggedIn=false;stage='reset';render();return;
  }
  if(event==='SIGNED_OUT'){
-  authLoad+=1;cloud.lock();hideSecret();loggedIn=false;email='';
+  authLoad+=1;cloud.lock();hideSecret();clearPrivateUI();loggedIn=false;email='';
   if(!passwordRecoveryMode)stage='login';render();return;
  }
  if(event==='SIGNED_IN'||event==='INITIAL_SESSION'||event==='USER_UPDATED'){
@@ -246,6 +315,6 @@ const {data:{subscription}}=supabase.auth.onAuthStateChange((event)=>{
   setTimeout(()=>{void refreshAuth();},0);
  }
 });
-window.addEventListener('pagehide',()=>{cloud.lock();hideSecret();subscription.unsubscribe();});
+window.addEventListener('pagehide',()=>{cloud.lock();hideSecret();clearPrivateUI();subscription.unsubscribe();});
 render();
 void refreshAuth();
