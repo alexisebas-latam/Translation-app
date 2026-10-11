@@ -40,24 +40,64 @@ El script no modifica sitios ajenos. Rechaza otra fuente Git o proyectos
 duplicados vinculados al repositorio. No registra tokens ni respuestas completas
 que podrían contener variables privadas.
 
-## Pendiente: Supabase Auth y pruebas reales
+## Supabase Auth: configurado y comprobado
 
-No se declara configurada la URL de Auth ni probados correos reales.
-El conector Supabase disponible permite revisar BD y RLS, pero no ofrece edición
-de Auth URL Configuration. El panel requiere una sesión; la selección GitHub /
-passkey quedó esperando interacción del navegador.
+El workflow de configuración completó correctamente el segundo intento:
+https://github.com/alexisebas-latam/Translation-app/actions/runs/38182933718
 
-Cuando se acceda al panel del proyecto existente, configurar y verificar:
+La API confirmó mediante lectura posterior:
 
 - Site URL: `https://plazo-app.pages.dev/`.
-- Redirect URLs exactas: `https://plazo-app.pages.dev/` y
+- Redirect URLs: `https://plazo-app.pages.dev/` y
   `https://plazo-app.pages.dev/?mode=reset`.
-- Mantener confirmación de correo habilitada.
-- Probar dos cuentas con correos verificables, confirmación, login y reset.
-- Con datos ficticios, crear bóveda/cliente, inspeccionar ciphertext en BD,
-  intentar acceso cruzado por API y recuperar en otro navegador con su clave.
-- Restablecer login sin clave de bóveda no debe descifrar datos.
-- Verificar bloqueo, cierre de sesión y persistencia real.
+- Registro por correo habilitado; confirmación de correo habilitada.
+- SMTP personalizado: no configurado.
+
+`SUPABASE_ACCESS_TOKEN` permanece en GitHub Actions secrets. El script solo
+modifica las URL y exige confirmación de correo; no imprime la respuesta completa
+de Management API ni sus posibles secretos SMTP/proveedores.
+
+## Pruebas reales realizadas
+
+Se utilizó una cuenta de prueba con alias del buzón conectado y datos ficticios.
+No se insertaron cuentas confirmadas administrativamente ni se desactivó la
+confirmación de correo.
+
+- Registro real por API: HTTP 200, usuario creado sin sesión automática.
+- Correo de confirmación recibido. Posteriormente la cuenta fue comprobada como
+  confirmada y con inicio de sesión en `auth.users`. Al intentar reutilizar el
+  enlace de confirmación devolvió `otp_expired`; no se afirma haber verificado
+  visualmente el primer recorrido de ese enlace por la interfaz.
+- Correo de recuperación real recibido; token verificado mediante Auth API.
+  Contraseña de la cuenta de prueba restablecida: HTTP 200. El correo apunta a
+  `https://plazo-app.pages.dev/?mode=reset`.
+- Login real con contraseña restablecida: correcto.
+- Adaptador real de la aplicación conectado a Supabase: crea bóveda, guarda
+  cliente ficticio, lee y descifra el mismo registro.
+- Lectura de la fila de servidor: ciphertext, sin nombre legible ni secreto
+  de recuperación.
+- Bloqueo impide leer; clave de recuperación incorrecta rechazada.
+- Segundo cliente SDK independiente, misma cuenta: sin clave no puede leer;
+  con la clave recupera el registro persistido.
+- Cliente sin autenticación: no puede leer el registro mediante Data API.
+- Cierre de sesión: adaptadores bloqueados y lecturas rechazadas.
+
+Estas pruebas se ejecutaron por API/SDK, no mediante dos navegadores físicos.
+Las 6 pruebas de demo y 8 de interfaz PC/móvil en Chromium también pasaron, pero
+no equivalen a un flujo visual completo con correos y usuarios independientes.
+
+## Pendientes y límites reales
+
+El registro de una segunda cuenta devolvió HTTP 429,
+`over_email_send_rate_limit`. Sigue pendiente el aislamiento entre **dos
+usuarios confirmados distintos** y las pruebas visuales de extremo a extremo
+en navegador/iPhone, así como restablecer la contraseña después de crear datos
+y verificar que sin la clave no se descifran.
+
+El SMTP predeterminado de Supabase restringe destinatarios a miembros del
+equipo y tiene límites de envío. Antes de abrir registro a usuarios externos,
+configurar un proveedor SMTP apropiado sin activar gastos no autorizados.
+No se ha declarado el registro público general como operativo.
 
 Security Advisor: aviso de protección contra contraseñas filtradas desactivada.
 Revisar disponibilidad en el plan Free antes de cambiarla; no activar gastos.
