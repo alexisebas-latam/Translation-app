@@ -14,7 +14,7 @@ async function request(url,method='GET',body){
 }
 const projects=[];
 for(let page=1;;page++){
- const data=await request(`${root}?page=${page}&per_page=20`);
+ const data=await request(page===1 ? root : `${root}?page=${page}`);
  if(!Array.isArray(data.result))throw new Error('Respuesta de proyectos inválida.');
  projects.push(...data.result);
  if(page>=(data.result_info?.total_pages||1))break;
