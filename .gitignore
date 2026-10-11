@@ -13,6 +13,7 @@ plazo-respaldo-*.zip
 *.sqlite
 *.db
 node_modules/
+dist/
 coverage/
 playwright-report/
 test-results/

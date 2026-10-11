@@ -9,6 +9,29 @@
 - URL + clave publicable incluidas como configuración pública del frontend. **Nunca añadir** service_role ni `sb_secret_`.
 
 ## Cloudflare Pages
+### Alternativa sin sesión de navegador: GitHub Actions
+
+El workflow `.github/workflows/deploy-cloudflare.yml` compila Vite y publica `dist`
+en Cloudflare Pages con Direct Upload cada vez que cambia `main`.
+Requiere los secretos de repositorio `CLOUDFLARE_API_TOKEN` (Account / Cloudflare
+Pages / Edit, limitado a la cuenta seleccionada) y `CLOUDFLARE_ACCOUNT_ID`.
+El token nunca se incorpora al bundle, al repositorio ni al informe.
+
+El paso previo inspecciona los proyectos de la cuenta antes de crear `plazo-app`.
+No modifica proyectos ajenos. Se detiene si existe otro proyecto vinculado al
+repositorio, si `plazo-app` apunta a otro repositorio, usa Git nativo o tiene otra
+rama de producción. No cambia automáticamente la estrategia de despliegue.
+
+La URL se obtiene de la respuesta de Cloudflare; no se presupone disponible
+`plazo-app.pages.dev`. El paso final comprueba HTML, bundle Vite y destino Supabase
+y deja los resultados en el resumen de Actions. Eso no valida correos ni cuentas
+reales. Direct Upload no permite convertir ese mismo proyecto a integración Git
+nativa; la automatización reside en GitHub Actions.
+
+GitHub Pages se conserva hasta verificar el despliegue Cloudflare. Después se
+puede dejar su workflow solo manual y revisar el antiguo despliegue desde rama.
+
+### Configuración con integración Git nativa
 Este repositorio antes era HTML estático y su configuración probable era Framework **None**, sin build command y salida `.`. La versión 2.0 requiere compilar JavaScript con Vite. En Workers & Pages → proyecto de Plazo → Settings → Builds / Build configuration:
 
 | Campo | Valor |
