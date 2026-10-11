@@ -34,13 +34,13 @@ jobs:
         id: project
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || '9b667cd94f6eaf21a5cc5dd13f0b51c8' }}
         run: node scripts/cloudflare-project.mjs
       - name: Deploy compiled assets to main
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || '9b667cd94f6eaf21a5cc5dd13f0b51c8' }}
           command: pages deploy dist --project-name=plazo-app --branch=main
       - name: Verify real public URL and compiled assets
         env:
