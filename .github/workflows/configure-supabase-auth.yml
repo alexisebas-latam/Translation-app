@@ -1,0 +1,29 @@
+name: Configure Plazo Supabase Auth
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/configure-supabase-auth.mjs'
+      - '.github/workflows/configure-supabase-auth.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: plazo-supabase-auth-config
+  cancel-in-progress: false
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Configure only Plazo Auth URLs and verify confirmation
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: node scripts/configure-supabase-auth.mjs
