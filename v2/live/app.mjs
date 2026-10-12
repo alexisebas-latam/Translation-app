@@ -1,320 +1,89 @@
 import {createPlazoSupabaseClient} from './supabase-client.mjs';
+import {createProductStore} from './product-store.mjs';
 import {createPlazoCloud} from './store.mjs';
-
-const supabase=createPlazoSupabaseClient();
-const cloud=createPlazoCloud(supabase);
-const $=id=>document.getElementById(id);
-const panes=['welcome','vaultAccess','workspace','clients','privacy'];
-let clients=[];
-let editingId=null;
-let deletingId=null;
-let screen='workspace';
-let stage='login'; // login / signup / forgot / reset / create / unlock / newSecret / open
-let email='';
-let doing=false;
-let authLoad=0;
-let passwordRecoveryMode=new URLSearchParams(location.search).get('mode')==='reset';
-let loggedIn=false;
-
-function feedback(message='',error=false){
- const el=$('feedback');
- el.textContent=message;
- el.classList.toggle('error',error);
+import {money,decimal,quote,finance,monthKey,STATUS,normalizeBackup} from '../domain/management.mjs';
+const sb=createPlazoSupabaseClient(),store=createProductStore(sb),legacy=createPlazoCloud(sb),$=id=>document.getElementById(id);
+const sections={panel:['Panel','home'],projects:['Proyectos','projects'],clients:['Clientes','clients'],finances:['Finanzas','finance'],settings:['Ajustes y respaldo','settings']};
+let user=null,data={clients:[],projects:[],entries:[],settings:{display_name:'',currency:'USD',goal_minor:0}},screen='panel',stage='login',doing=false,authEpoch=0,editor=null,confirmation=null,loadedOwner=null;
+let recovery=new URLSearchParams(location.search).get('mode')==='reset';
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+function el(tag,cls='',value=''){const n=document.createElement(tag);if(cls)n.className=cls;if(value!==undefined)n.textContent=value;return n;}
+function icon(name){const n=document.createElementNS('http://www.w3.org/2000/svg','svg');n.setAttribute('class','icon');n.setAttribute('aria-hidden','true');const use=document.createElementNS(n.namespaceURI,'use');use.setAttribute('href','#i-'+name);n.append(use);return n;}
+function action(label,fn,cls='btn secondary'){const b=el('button',cls,label);b.type='button';b.addEventListener('click',fn);return b;}
+function feedback(msg='',error=false){for(const id of ['feedback','authFeedback']){$(id).textContent=msg;$(id).classList.toggle('error',error);}}
+function busy(node,on){for(const n of node?.querySelectorAll?.('button,input,select,textarea')||[])n.disabled=on;if(node?.tagName==='BUTTON')node.disabled=on;node?.setAttribute('aria-busy',String(on));}
+async function operate(node,fn){if(doing)return;doing=true;busy(node,true);feedback('');try{await fn();}catch(e){feedback(e.message||'No se pudo completar. Intenta de nuevo.',true);}finally{busy(node,false);doing=false;}}
+function empty(container,title,description,cta=null,ico='projects'){const box=el('div','empty');box.append(icon(ico),el('h3','',title),el('p','',description));if(cta)box.append(action(cta[0],cta[1],'btn primary'));container.append(box);}
+function nav(container){for(const [key,[title,ico]] of Object.entries(sections)){const b=action(title,()=>selectScreen(key),'nav-button');b.dataset.screen=key;b.prepend(icon(ico));container.append(b);}}
+nav($('desktopNav'));nav($('mobileNav'));
+function renderShell(){const open=Boolean(user&&!recovery);$('app').hidden=!open;$('welcome').hidden=open;if(!open){for(const mode of ['login','signup','forgot','reset'])$(mode+'Form').hidden=stage!==mode;$('authTitle').textContent=({login:'Ingresa a Plazo',signup:'Crea tu cuenta',forgot:'Recupera tu acceso',reset:'Cambia tu contraseña'})[stage];$('showForgot').hidden=stage!=='login';$('backLogin').hidden=stage!=='signup'&&stage!=='forgot';$('showLogin').classList.toggle('selected',stage==='login');$('showSignup').classList.toggle('selected',stage==='signup');$('authHint').textContent=stage==='signup'?'Empieza a organizar tu trabajo.':'Continúa donde dejaste tu trabajo.';return;}
+ $('sectionTitle').textContent=sections[screen][0];for(const key of Object.keys(sections))$(key).hidden=key!==screen;for(const b of document.querySelectorAll('[data-screen]')){const selected=b.dataset.screen===screen;b.classList.toggle('active',selected);if(selected)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');}
+ const name=data.settings.display_name||user.email?.split('@')[0]||'Mi espacio';$('accountName').textContent=name;$('accountInitial').textContent=name[0]?.toUpperCase()||'P';$('signedEmail').textContent=user.email||'';
 }
-function busy(formOrButton,flag){
- if(formOrButton?.matches?.('form')){
-   for(const element of formOrButton.querySelectorAll('input,button'))element.disabled=flag;
- } else if(formOrButton)formOrButton.disabled=flag;
+function selectScreen(next){if(!sections[next])return;screen=next;closeMenu();renderShell();feedback('');$('mainContent').focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
+function closeMenu(){if($('appMenu').open)$('appMenu').close();$('menuButton').setAttribute('aria-expanded','false');}
+function clearData(){data={clients:[],projects:[],entries:[],settings:{display_name:'',currency:'USD',goal_minor:0}};for(const id of ['projectList','clientList','ledgerList','panelStats','upcomingList','topClients','goalContent','financeStats','financeChart'])$(id).replaceChildren();for(const form of document.querySelectorAll('form'))form.reset();$('signedEmail').textContent='';$('accountName').textContent='Mi cuenta';$('accountInitial').textContent='P';$('greeting').textContent='Tu trabajo, en orden.';for(const dlg of document.querySelectorAll('dialog'))if(dlg.open)dlg.close();$('recordFields').replaceChildren();legacy.lock();editor=null;confirmation=null;loadedOwner=null;}
+async function load(){const epoch=authEpoch,owner=user?.id;if(!owner)return;$('syncStatus').textContent='Sincronizando…';try{const fresh=await store.load();if(epoch!==authEpoch||owner!==user?.id)return;data=fresh;const first=loadedOwner!==owner;loadedOwner=owner;if(first)$('financeCurrency').value=data.settings.currency;renderAll();$('syncStatus').textContent='Datos actualizados';}catch(e){if(epoch===authEpoch){$('syncStatus').textContent='Error de sincronización';throw e;}}}
+async function refreshAuth(){const epoch=++authEpoch;const {data:auth,error}=await sb.auth.getUser();if(epoch!==authEpoch)return;if(error||!auth?.user||auth.user.is_anonymous){user=null;clearData();stage=recovery?'reset':'login';renderShell();return;}if(user&&user.id!==auth.user.id)clearData();user=auth.user;if(recovery){stage='reset';renderShell();return;}renderShell();await load();}
+const clientName=id=>data.clients.find(c=>c.id===id)?.name||'Sin cliente';
+const dueLabel=s=>s?new Intl.DateTimeFormat('es-CL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(s)):'Sin fecha de entrega';
+function metric(label,value,detail='',accent=false){const n=el('div','metric'+(accent?' accent':''));n.append(el('span','metric-label',label),el('div','metric-value',value));if(detail)n.append(el('span','metric-detail',detail));return n;}
+function renderPanel(){
+ const cur=data.settings.currency,month=monthKey(),f=finance(data.projects,data.entries,month,cur),active=data.projects.filter(p=>['pending','active'].includes(p.status));
+ const name=data.settings.display_name;$('greeting').textContent=name?'Hola, '+name+'.':'Tu trabajo, en orden.';$('todayLabel').textContent=new Intl.DateTimeFormat('es-CL',{weekday:'long',day:'numeric',month:'long'}).format(new Date());
+ $('panelStats').replaceChildren(metric('Proyectos activos',String(active.length),'Pendientes y en curso'),metric('Palabras por trabajar',new Intl.NumberFormat('es-CL').format(active.reduce((a,p)=>a+p.words,0)),'En proyectos activos'),metric('Cobrado este mes',money(f.collected+f.extras,cur),'Proyectos + ingresos extras'),metric('Por cobrar',money(f.pending,cur),'Todos los proyectos · '+cur,true));
+ const list=$('upcomingList');list.replaceChildren();const upcoming=active.filter(p=>p.due_at).sort((a,b)=>new Date(a.due_at)-new Date(b.due_at)).slice(0,5);
+ if(!upcoming.length)empty(list,'Sin entregas programadas','Crea un proyecto con fecha de entrega para verlo aquí.',['Crear proyecto',()=>openEditor('projects')]);
+ for(const p of upcoming){const row=el('div','work-row'),main=el('div','work-main'),end=el('div','work-end');main.append(el('span','work-title',p.name),el('span','work-sub',clientName(p.client_id)+' · '+(p.language||p.service)));end.append(el('span','due'+(new Date(p.due_at)<new Date()?' overdue':''),dueLabel(p.due_at)),el('span','badge '+p.status,STATUS[p.status]),action('Abrir',()=>openEditor('projects',p),'text-btn'));row.append(main,end);list.append(row);}
+ const goal=$('goalContent');goal.replaceChildren();const amount=f.collected+f.extras;goal.append(el('div','goal-number',money(amount,cur)),el('p','muted small',data.settings.goal_minor?'de '+money(data.settings.goal_minor,cur)+' para este mes':'Define una meta mensual en Ajustes.'));
+ const track=el('div','goal-track'),fill=el('div','goal-fill');fill.style.width=(data.settings.goal_minor?Math.min(100,Math.max(0,amount/data.settings.goal_minor*100)):0)+'%';track.append(fill);goal.append(track,el('p','muted small',data.settings.goal_minor?Math.round(amount/data.settings.goal_minor*100)+'% de tu meta · ingresos cobrados':'Tu progreso aparecerá cuando definas una meta.'));
+ $('topCurrency').textContent=cur;const top=$('topClients');top.replaceChildren();const ranked=data.clients.map(c=>({...c,total:data.projects.filter(p=>p.client_id===c.id&&p.currency===cur).reduce((a,p)=>a+p.paid_minor,0)})).filter(c=>c.total>0).sort((a,b)=>b.total-a.total).slice(0,5);
+ if(!ranked.length)empty(top,'Aún no hay cobros registrados','Cuando registres el cobro de un proyecto, verás aquí a tus principales clientes.',null,'clients');ranked.forEach((c,i)=>{const row=el('div','ranking-row');row.append(el('span','ranking-number',String(i+1)),el('span','ranking-name',c.name),el('span','amount',money(c.total,cur)));top.append(row);});
 }
-function hideSecret(){
- $('newRecoverySecret').textContent='';
- $('savedRecovery').checked=false;
- $('confirmRecovery').disabled=true;
+function rowActions(kind,r){const box=el('div','row-actions');const name=r.name||r.concept;const edit=action('Editar',()=>openEditor(kind,r)),remove=action('Eliminar',()=>requestDelete(kind,r),'btn danger');edit.setAttribute('aria-label','Editar '+name);remove.setAttribute('aria-label','Eliminar '+name);box.append(edit,remove);return box;}
+function renderProjects(){const container=$('projectList');container.replaceChildren();const query=$('projectSearch').value.toLocaleLowerCase('es'),filter=$('projectFilter').value,client=$('projectClientFilter').value;const rows=data.projects.filter(p=>(filter==='all'||p.status===filter)&&(!client||p.client_id===client)&&(p.name+' '+p.language+' '+clientName(p.client_id)).toLocaleLowerCase('es').includes(query)).sort((a,b)=>(a.due_at||'9999').localeCompare(b.due_at||'9999'));
+ if(!rows.length)empty(container,data.projects.length?'Sin resultados':'Tu próximo proyecto empieza aquí',data.projects.length?'Prueba con otro filtro o búsqueda.':'Añade cliente, palabras, tarifa y fecha de entrega.',['Nuevo proyecto',()=>openEditor('projects')]);
+ for(const p of rows){const row=el('article','list-row'),main=el('div'),heading=el('div','row-heading'),details=el('div','row-details');heading.append(el('h3','',p.name),el('span','badge '+p.status,STATUS[p.status]));details.append(el('span','',clientName(p.client_id)),el('span','',p.language||p.service),el('span','',new Intl.NumberFormat('es-CL').format(p.words)+' palabras'),el('span','',dueLabel(p.due_at)));const billing=el('div','row-details');billing.style.marginTop='10px';billing.append(el('span','amount',money(p.quoted_minor,p.currency)),el('span','',p.paid_minor===p.quoted_minor&&p.paid_minor>0?'Cobrado':p.paid_minor?'Cobro parcial · '+money(p.paid_minor,p.currency):'Sin cobros'));main.append(heading,details,billing);if(p.notes)main.append(el('p','row-notes',p.notes));row.append(main,rowActions('projects',p));container.append(row);}
 }
-function showPane(id){
- for(const pane of panes)$(pane).hidden=pane!==id;
- for(const btn of document.querySelectorAll('[data-screen]')){
-   const current=btn.dataset.screen===screen;
-   btn.classList.toggle('active',current);
-   if(current)btn.setAttribute('aria-current','page');
-   else btn.removeAttribute('aria-current');
- }
+function renderClients(){const box=$('clientList');box.replaceChildren();const query=$('clientSearch').value.toLocaleLowerCase('es'),rows=data.clients.filter(c=>(c.name+' '+c.type+' '+c.email).toLocaleLowerCase('es').includes(query));$('clientCount').textContent=data.clients.length+' '+(data.clients.length===1?'cliente':'clientes');if(!rows.length)empty(box,data.clients.length?'Sin resultados':'Tus clientes, bien organizados',data.clients.length?'Prueba con otro nombre, tipo o correo.':'Guarda tu primer contacto y vincúlalo a tus proyectos.',['Nuevo cliente',()=>openEditor('clients')],'clients');for(const c of rows){const row=el('article','list-row'),main=el('div'),heading=el('div','client-heading'),info=el('div');info.append(el('h3','work-title',c.name),el('div','work-sub',[c.type,c.email].filter(Boolean).join(' · ')));heading.append(el('span','client-avatar',c.name.slice(0,2).toUpperCase()),info);const projects=data.projects.filter(p=>p.client_id===c.id),cur=data.settings.currency,total=projects.filter(p=>p.currency===cur).reduce((a,p)=>a+p.paid_minor,0);main.append(heading,el('p','row-notes',projects.length+' proyectos · '+money(total,cur)+' cobrados'));if(c.notes)main.append(el('p','row-notes',c.notes));row.append(main,rowActions('clients',c));box.append(row);}}
+function renderFinances(){const month=$('financeMonth').value,cur=$('financeCurrency').value,f=finance(data.projects,data.entries,month,cur);$('financeStats').replaceChildren(metric('Cobros de proyectos',money(f.collected,cur),'Fecha del cobro'),metric('Ingresos extras',money(f.extras,cur),'Movimientos de ingreso'),metric('Gastos',money(f.expenses,cur),'Movimientos de gasto'),metric('Balance del mes',money(f.net,cur),'Ingresos menos gastos',true));$('pendingTotal').textContent='Pendiente de cobro: '+money(f.pending,cur)+' · Todos los meses. Cada moneda se calcula por separado.';
+ const ledger=$('ledgerList');ledger.replaceChildren();const rows=[...data.entries.filter(e=>e.currency===cur&&e.date.startsWith(month)).map(e=>({...e,kind:'entries'})),...data.projects.filter(p=>p.currency===cur&&p.paid_date?.startsWith(month)&&p.paid_minor>0).map(p=>({...p,kind:'projects',concept:p.name,date:p.paid_date,amount_minor:p.paid_minor,type:'income'}))].sort((a,b)=>b.date.localeCompare(a.date));
+ if(!rows.length)empty(ledger,'Este mes aún no tiene movimientos','Registra gastos e ingresos extras, o añade el cobro a un proyecto.',['Nuevo movimiento',()=>openEditor('entries')],'finance');for(const r of rows){const row=el('article','list-row'),main=el('div');main.append(el('div','work-title',r.concept),el('div','work-sub',r.date+' · '+(r.kind==='projects'?'Cobro de proyecto':r.type==='income'?'Ingreso extra':'Gasto')+(r.client_id?' · '+clientName(r.client_id):'')));const actions=el('div','row-actions');actions.append(el('span','amount '+(r.type==='income'?'positive':'negative'),(r.type==='expense'?'−':'')+money(r.amount_minor,cur)),action(r.kind==='projects'?'Ver proyecto':'Editar',()=>openEditor(r.kind,r.kind==='projects'?data.projects.find(p=>p.id===r.id):r)));if(r.kind==='entries')actions.append(action('Eliminar',()=>requestDelete('entries',r),'btn danger'));row.append(main,actions);ledger.append(row);}
+ const chart=$('financeChart');chart.replaceChildren();const points=[];const [y,m]=month.split('-').map(Number);for(let i=5;i>=0;i--){const d=new Date(y,m-1-i,1),key=monthKey(d),stats=finance(data.projects,data.entries,key,cur);points.push({key,inc:stats.collected+stats.extras,exp:stats.expenses,label:new Intl.DateTimeFormat('es-CL',{month:'short'}).format(d)});}const max=Math.max(1,...points.flatMap(p=>[p.inc,p.exp]));for(const p of points){const col=el('div','chart-column'),values=el('div','bar-values');values.append(el('div','',money(p.inc,cur)),el('div','',money(p.exp,cur)));const pair=el('div','bar-pair');for(const [v,cls] of [[p.inc,''],[p.exp,' expense']]){const b=el('div','chart-bar'+cls);b.style.height=(v/max*100)+'%';pair.append(b);}col.setAttribute('aria-label',p.key+': ingresos '+money(p.inc,cur)+', gastos '+money(p.exp,cur));col.append(values,pair,el('span','bar-label',p.label));chart.append(col);}
 }
-function render(){
- $('menuAccount').hidden=!loggedIn;
- $('signedEmail').textContent=email;
- $('pageTitle').textContent={workspace:'Tu espacio de trabajo',clients:'Clientes',privacy:'Privacidad'}[screen]||'Plazo';
- if(screen==='privacy'){showPane('privacy');return;}
- if(!loggedIn){
-   showPane('welcome');
-   $('loginForm').hidden=stage!=='login';
-   $('signupForm').hidden=stage!=='signup';
-   $('forgotForm').hidden=stage!=='forgot';
-   $('resetForm').hidden=stage!=='reset';
-   $('showForgot').hidden=stage!=='login';
-   $('backLogin').hidden=stage!=='forgot'&&stage!=='signup';
-   $('authTitle').textContent={login:'Ingresa a Plazo',signup:'Crea tu cuenta',forgot:'Recupera tu acceso',reset:'Cambia tu contraseña'}[stage]||'Ingresa a Plazo';
-   $('showLogin').classList.toggle('selected',stage==='login');
-   $('showSignup').classList.toggle('selected',stage==='signup');
-   return;
- }
- if(!cloud.ready||stage==='newSecret'){
-   showPane('vaultAccess');
-   $('accountEmail').textContent=email;
-   $('createVaultPanel').hidden=stage!=='create';
-   $('unlockVaultPanel').hidden=stage!=='unlock';
-   $('newRecoveryPanel').hidden=stage!=='newSecret';
-   return;
- }
- showPane(screen==='clients'?'clients':'workspace');
-}
-function selectScreen(next){
- if(!['workspace','clients','privacy'].includes(next))return;
- screen=next;
- closeMenu();
- closeClientForm();
- render();
- feedback('');
-}
-function selectAuth(next){
- if(loggedIn)return;
- stage=next;
- render();
- feedback('');
-}
-async function refreshAuth(){
- const nonce=++authLoad;
- const {data,error}=await supabase.auth.getUser();
- if(nonce!==authLoad)return;
- if(error||!data?.user||data.user.is_anonymous){
-   loggedIn=false;email='';cloud.lock();clearPrivateUI();
-   if(!passwordRecoveryMode)stage='login';else stage='reset';
-   render();return;
- }
- email=data.user.email||'Usuario autenticado';
- loggedIn=true;
- if(passwordRecoveryMode){
-   // Auth can complete before PASSWORD_RECOVERY arrives. Keep reset screen ready.
-   loggedIn=false;stage='reset';render();return;
- }
- if(stage==='newSecret'&&cloud.ready){render();return;}
- try{
-   await cloud.ensureWorkspace();
-   if(nonce!==authLoad)return;
-   if(cloud.ready){stage='open';render();await loadClients();return;}
-   stage=await cloud.vaultExists()?'unlock':'create';
-   render();
- }catch(err){
-   feedback('No se pudo abrir el espacio privado: '+err.message,true);
- }
-}
-async function operate(buttonOrForm,action){
- if(doing)return;
- doing=true;busy(buttonOrForm,true);
- buttonOrForm?.setAttribute('aria-busy','true');
- try{await action();}
- catch(err){feedback(err?.message||'No se pudo completar la operación.',true);}
- finally{busy(buttonOrForm,false);buttonOrForm?.removeAttribute('aria-busy');doing=false;}
-}
-function validEmail(s){return typeof s==='string'&&s.includes('@')&&s.length<=254;}
-function closeMenu(){
- if($('appMenu').open)$('appMenu').close();
- $('menuButton').setAttribute('aria-expanded','false');
-}
-function closeClientForm(){
- $('clientForm').hidden=true;$('clientForm').reset();editingId=null;
- $('clientFormError').hidden=true;
-}
-function clearPrivateUI(){
- clients=[];$('clientList').replaceChildren();$('clientCount').textContent='0';
- $('clientSearch').value='';closeClientForm();
- if($('deleteDialog').open)$('deleteDialog').close();
- deletingId=null;$('deleteClientName').textContent='';
-}
-function openClientForm(client=null){
- if(!loggedIn||!cloud.ready){selectScreen('clients');feedback('Desbloquea tu bóveda para gestionar clientes.');return;}
- screen='clients';closeMenu();render();
- editingId=client?.id||null;
- $('clientFormTitle').textContent=client?'Editar cliente':'Nuevo cliente';
- $('saveClient').textContent=client?'Guardar cambios':'Guardar cliente';
- $('clientName').value=client?.name||'';$('clientType').value=client?.type||'Cliente';
- $('clientFormError').hidden=true;$('clientForm').hidden=false;
- $('clientName').focus();$('clientForm').scrollIntoView({block:'nearest'});
-}
-function requestDelete(client){
- if(doing)return;
- deletingId=client.id;$('deleteClientName').textContent=client.name;
- $('deleteError').hidden=true;$('deleteDialog').showModal();
- $('cancelDelete').focus();
-}
-function renderClients(){
- const query=$('clientSearch').value.trim().toLocaleLowerCase('es');
- const filtered=clients.filter(c=>(c.name+' '+c.type).toLocaleLowerCase('es').includes(query));
- const list=$('clientList');list.replaceChildren();
- $('clientCount').textContent=String(clients.length);
- $('clientTag').textContent=clients.length===1?'1 cliente':clients.length+' clientes';
- $('homePrompt').textContent=clients.length?'Tus contactos, a mano':'Empieza con tu primer cliente';
- $('homeDescription').textContent=clients.length?'Busca un cliente o actualiza sus datos cuando lo necesites.':'Guarda sus datos y ten tus contactos a mano.';
- if(!filtered.length){
-  const item=document.createElement('li');item.className='empty-state';
-  const title=document.createElement('strong');title.textContent=query?'Sin resultados':'Todavía no tienes clientes';
-  const text=document.createElement('span');text.textContent=query?'Prueba con otro nombre o tipo de cliente.':'Pulsa "Añadir cliente" para guardar tu primer contacto.';
-  item.append(title,text);list.append(item);return;
- }
- for(const client of filtered){
-  const item=document.createElement('li');item.className='client-row';
-  const avatar=document.createElement('span');avatar.className='client-avatar';
-  avatar.setAttribute('aria-hidden','true');avatar.textContent=client.name.slice(0,1).toLocaleUpperCase('es-CL');
-  const content=document.createElement('div');content.className='client-info';
-  const name=document.createElement('strong');name.textContent=client.name;
-  const type=document.createElement('small');type.textContent=client.type||'Cliente';
-  content.append(name,type);
-  const actions=document.createElement('div');actions.className='client-actions';
-  const edit=document.createElement('button');edit.type='button';edit.className='row-action';edit.textContent='Editar';
-  edit.setAttribute('aria-label','Editar '+client.name);edit.addEventListener('click',()=>openClientForm(client));
-  const remove=document.createElement('button');remove.type='button';remove.className='row-action danger';remove.textContent='Eliminar';
-  remove.setAttribute('aria-label','Eliminar '+client.name);remove.addEventListener('click',()=>requestDelete(client));
-  actions.append(edit,remove);item.append(avatar,content,actions);list.append(item);
- }
-}
-async function loadClients(){
- if(!cloud.ready)return;
- clients=await cloud.listClients();renderClients();
-}
-$('menuButton').addEventListener('click',()=>{$('appMenu').showModal();$('menuButton').setAttribute('aria-expanded','true');});
-$('closeMenu').addEventListener('click',closeMenu);
-$('appMenu').addEventListener('close',()=>{$('menuButton').setAttribute('aria-expanded','false');});
-$('appMenu').addEventListener('click',event=>{if(event.target===$('appMenu')){const box=$('appMenu').getBoundingClientRect();if(event.clientX<box.left)closeMenu();}});
-for(const btn of document.querySelectorAll('[data-new-client]'))btn.addEventListener('click',()=>openClientForm());
-$('cancelClient').addEventListener('click',closeClientForm);
-$('cancelClientBottom').addEventListener('click',closeClientForm);
-$('clientSearch').addEventListener('input',renderClients);
-$('cancelDelete').addEventListener('click',()=>{$('deleteDialog').close();});
-$('deleteDialog').addEventListener('close',()=>{deletingId=null;$('deleteClientName').textContent='';});
-$('confirmDelete').addEventListener('click',event=>void operate(event.currentTarget,async()=>{
- if(!deletingId)return;
- const id=deletingId;
- try{await cloud.deleteClient(id);}catch(error){$('deleteError').textContent=error.message;$('deleteError').hidden=false;throw error;}
- $('deleteDialog').close();if(editingId===id)closeClientForm();
- await loadClients();feedback('Cliente eliminado.');
-}));
-for(const btn of document.querySelectorAll('[data-screen]')){
- btn.addEventListener('click',()=>selectScreen(btn.dataset.screen));
-}
-$('showLogin').addEventListener('click',()=>selectAuth('login'));
-$('showSignup').addEventListener('click',()=>selectAuth('signup'));
-$('showForgot').addEventListener('click',()=>selectAuth('forgot'));
-$('backLogin').addEventListener('click',()=>{passwordRecoveryMode=false;history.replaceState(null,'',location.pathname);selectAuth('login');});
-
-$('signupForm').addEventListener('submit',event=>{
- event.preventDefault();const form=event.currentTarget;
- void operate(form,async()=>{
-  const address=$('signupEmail').value.trim().toLowerCase(),password=$('signupPassword').value;
-  if(!validEmail(address)||password.length<8)throw new Error('Introduce un correo y una contraseña de al menos 8 caracteres.');
-  const {data,error}=await supabase.auth.signUp({email:address,password,
-   options:{emailRedirectTo:location.origin+location.pathname}});
-  if(error)throw new Error('No fue posible registrarte: '+error.message);
-  form.reset();
-  if(!data?.session){
-   stage='login';render();
-   feedback('Revisa tu correo para verificar la cuenta. Después podrás iniciar sesión.');
-  }else{await refreshAuth();feedback('Cuenta creada. Configura tu bóveda personal.');}
- });
-});
-$('loginForm').addEventListener('submit',event=>{
- event.preventDefault();const form=event.currentTarget;
- void operate(form,async()=>{
-  const address=$('loginEmail').value.trim().toLowerCase(),password=$('loginPassword').value;
-  const {error}=await supabase.auth.signInWithPassword({email:address,password});
-  if(error)throw new Error('No fue posible iniciar sesión. Verifica tus datos y tu correo.');
-  form.reset();await refreshAuth();
-  feedback('Sesión iniciada. Desbloquea tu información personal.');
- });
-});
-$('forgotForm').addEventListener('submit',event=>{
- event.preventDefault();const form=event.currentTarget;
- void operate(form,async()=>{
-  const address=$('forgotEmail').value.trim().toLowerCase();
-  const {error}=await supabase.auth.resetPasswordForEmail(address,{
-   redirectTo:location.origin+location.pathname+'?mode=reset'
-  });
-  if(error)throw new Error('No pudimos procesar la solicitud. Inténtalo de nuevo.');
-  form.reset();feedback('Si existe una cuenta con ese correo, recibirás instrucciones para recuperar el acceso.');
- });
-});
-$('resetForm').addEventListener('submit',event=>{
- event.preventDefault();const form=event.currentTarget;
- void operate(form,async()=>{
-  const {error}=await supabase.auth.updateUser({password:$('resetPassword').value});
-  if(error)throw new Error('El enlace expiró o no pudimos cambiar la contraseña.');
-  form.reset();
-  passwordRecoveryMode=false;
-  history.replaceState(null,'',location.pathname);
-  await supabase.auth.signOut();
-  cloud.lock();loggedIn=false;stage='login';render();
-  feedback('Contraseña actualizada. Inicia sesión y usa tu clave de bóveda para ver tus datos.');
- });
-});
-$('createVaultButton').addEventListener('click',event=>void operate(event.currentTarget,async()=>{
- const value=await cloud.initializeVault();
- $('newRecoverySecret').textContent=value.recoverySecret;
- stage='newSecret';render();
- feedback('Guarda tu clave de recuperación. Esta es la única vez que se mostrará.');
-}));
-$('copyRecovery').addEventListener('click',event=>void operate(event.currentTarget,async()=>{
- const value=$('newRecoverySecret').textContent;
- if(!value)throw new Error('No hay clave disponible.');
- await navigator.clipboard.writeText(value);
- feedback('Clave copiada. Guárdala en un lugar privado, no en un mensaje a soporte.');
-}));
-$('savedRecovery').addEventListener('change',event=>{
- $('confirmRecovery').disabled=!event.currentTarget.checked;
-});
-$('confirmRecovery').addEventListener('click',event=>void operate(event.currentTarget,async()=>{
- if(!$('savedRecovery').checked)throw new Error('Confirma que guardaste tu clave de recuperación.');
- hideSecret();stage='open';render();await loadClients();
- feedback('Bóveda lista. Tu información se cifrará antes de guardarse.');
-}));
-$('unlockForm').addEventListener('submit',event=>{
- event.preventDefault();const form=event.currentTarget;
- void operate(form,async()=>{
-  const secret=$('unlockSecret').value.trim();
-  await cloud.unlock(secret);form.reset();
-  stage='open';render();await loadClients();
-  feedback('Tus datos se descifraron únicamente en este dispositivo.');
- });
-});
-$('clientForm').addEventListener('submit',event=>{
- event.preventDefault();const form=event.currentTarget;
- void operate(form,async()=>{
-  const name=$('clientName').value;
-  const type=$('clientType').value;const edited=Boolean(editingId);
-  try{if(editingId)await cloud.updateClient(editingId,name,type);else await cloud.addClient(name,type);}
-  catch(error){$('clientFormError').textContent=error.message;$('clientFormError').hidden=false;throw error;}
-  closeClientForm();await loadClients();
-  feedback(edited?'Cambios guardados.':'Cliente guardado.');
- });
-});
-$('lockButton').addEventListener('click',()=>{
- cloud.lock();hideSecret();clearPrivateUI();closeMenu();stage='unlock';screen='workspace';render();feedback('Bóveda bloqueada en este dispositivo.');
-});
-$('signOutButton').addEventListener('click',event=>void operate(event.currentTarget,async()=>{
- cloud.lock();hideSecret();clearPrivateUI();closeMenu();await cloud.signOut();
- authLoad+=1;loggedIn=false;email='';stage='login';render();feedback('Sesión cerrada.');
-}));
-const {data:{subscription}}=supabase.auth.onAuthStateChange((event)=>{
- if(event==='PASSWORD_RECOVERY'){
-  passwordRecoveryMode=true;loggedIn=false;stage='reset';render();return;
- }
- if(event==='SIGNED_OUT'){
-  authLoad+=1;cloud.lock();hideSecret();clearPrivateUI();loggedIn=false;email='';
-  if(!passwordRecoveryMode)stage='login';render();return;
- }
- if(event==='SIGNED_IN'||event==='INITIAL_SESSION'||event==='USER_UPDATED'){
-  // Do not call Supabase APIs synchronously inside auth state callback.
-  setTimeout(()=>{void refreshAuth();},0);
- }
-});
-window.addEventListener('pagehide',()=>{cloud.lock();hideSecret();clearPrivateUI();subscription.unsubscribe();});
-render();
-void refreshAuth();
+function clientOptions(select,blank='Sin cliente'){const previous=select.value;select.replaceChildren();const none=el('option','',blank);none.value='';select.append(none);for(const c of data.clients){const o=el('option','',c.name);o.value=c.id;select.append(o);}if([...select.options].some(o=>o.value===previous))select.value=previous;}
+function renderAll(){renderShell();clientOptions($('projectClientFilter'),'Todos los clientes');renderPanel();renderProjects();renderClients();renderFinances();$('displayName').value=data.settings.display_name;$('defaultCurrency').value=data.settings.currency;$('monthlyGoal').value=decimal(data.settings.goal_minor,data.settings.currency);}
+function field(name,label,value='',opts={}){const wrap=el('div',opts.full?'full':'');const lab=el('label','',label);lab.htmlFor='f_'+name;let input;if(opts.options){input=el('select');for(const [val,title] of opts.options){const o=el('option','',title);o.value=val;input.append(o);}}else if(opts.textarea)input=el('textarea');else{input=el('input');input.type=opts.type||'text';if(opts.max)input.maxLength=opts.max;if(opts.min!=null)input.min=opts.min;if(opts.step)input.step=opts.step;if(opts.inputmode)input.inputMode=opts.inputmode;}input.id='f_'+name;input.name=name;if(opts.required)input.required=true;input.value=value??'';wrap.append(lab,input);if(opts.help)wrap.append(el('p','field-help',opts.help));return wrap;}
+function formValue(name){return $('f_'+name)?.value||'';}
+function inputObject(){return Object.fromEntries(new FormData($('recordForm')));}
+function updateQuote(){if(editor?.kind!=='projects')return;try{const cur=formValue('currency');$('quotePreview').textContent='Total del proyecto: '+money(quote(formValue('words'),formValue('rate'),cur),cur);}catch{$('quotePreview').textContent='Completa las palabras y la tarifa para calcular el total.';}}
+function openEditor(kind,row=null){if(!user||doing)return;editor={kind,row};$('editorTitle').textContent=(row?'Editar ':'Nuevo ')+({clients:'cliente',projects:'proyecto',entries:'movimiento'})[kind];$('editorError').hidden=true;const fields=$('recordFields');fields.replaceChildren();const cur=row?.currency||data.settings.currency;
+ if(kind==='clients'){fields.append(field('name','Nombre del cliente',row?.name,{required:true,max:120}),field('type','Tipo o referencia',row?.type||'Cliente',{max:80}),field('email','Correo de contacto',row?.email,{type:'email',max:254}),field('notes','Notas',row?.notes,{textarea:true,max:4000}));}
+ if(kind==='projects'){fields.append(field('name','Nombre del proyecto',row?.name,{required:true,max:180}));const grid=el('div','field-grid');grid.append(field('client_id','Cliente',row?.client_id,{options:[['','Sin cliente'],...data.clients.map(c=>[c.id,c.name])]}),field('language','Idiomas',row?.language,{max:100}),field('service','Servicio',row?.service||'Traducción',{max:80}),field('status','Estado del trabajo',row?.status||'pending',{options:Object.entries(STATUS)}),field('words','Número de palabras',row?.words??0,{type:'number',min:0,step:'1',required:true}),field('rate','Tarifa por palabra',row?.rate??'0',{inputmode:'decimal',required:true}),field('currency','Moneda',cur,{options:['USD','EUR','CLP'].map(c=>[c,c])}),field('due_at','Fecha y hora de entrega',row?.due_at?localDateTime(row.due_at):'',{type:'datetime-local'}));fields.append(grid);const preview=el('p','quote-preview');preview.id='quotePreview';fields.append(preview);const billing=el('div','field-grid');billing.append(field('paid','Importe cobrado hasta ahora',row?decimal(row.paid_minor,cur):'0',{inputmode:'decimal',required:true,help:'Usa 0 si todavía no recibiste el pago.'}),field('paid_date','Fecha del cobro',row?.paid_date||today(),{type:'date',help:'Un cobro parcial se registra como un único importe acumulado.'}));fields.append(billing,field('notes','Notas del proyecto',row?.notes,{textarea:true,max:4000}));for(const name of ['words','rate','currency'])$('f_'+name).addEventListener('input',updateQuote);updateQuote();}
+ if(kind==='entries'){fields.append(field('concept','Concepto del movimiento',row?.concept,{required:true,max:180}));const grid=el('div','field-grid');grid.append(field('type','Tipo',row?.type||'expense',{options:[['expense','Gasto'],['income','Ingreso extra']]}),field('amount','Importe',row?decimal(row.amount_minor,cur):'',{inputmode:'decimal',required:true}),field('currency','Moneda',cur,{options:['USD','EUR','CLP'].map(c=>[c,c])}),field('date','Fecha',row?.date||today(),{type:'date',required:true}),field('client_id','Cliente (opcional)',row?.client_id,{options:[['','Sin cliente'],...data.clients.map(c=>[c.id,c.name])],full:true}));fields.append(grid,field('notes','Notas',row?.notes,{textarea:true,max:4000}),el('p','muted small','Los cobros de traducciones se registran en el proyecto para evitar contarlos dos veces.'));}
+ $('editorDialog').showModal();fields.querySelector('input,select')?.focus();}
+function localDateTime(s){const d=new Date(s);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'T'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function closeEditor(){if(doing)return;$('editorDialog').close();}
+$('editorDialog').addEventListener('close',()=>{editor=null;$('recordFields').replaceChildren();$('editorError').textContent='';});$('editorDialog').addEventListener('cancel',e=>{if(doing)e.preventDefault();});
+function requestDelete(kind,row){if(doing)return;confirmation={kind,row};$('confirmTitle').textContent='Eliminar '+({clients:'cliente',projects:'proyecto',entries:'movimiento'})[kind];$('confirmText').textContent='¿Eliminar «'+(row.name||row.concept)+'»? Esta acción no se puede deshacer.';$('confirmError').hidden=true;$('confirmAction').textContent='Eliminar';$('confirmDialog').showModal();$('cancelConfirm').focus();}
+$('recordForm').addEventListener('submit',e=>{e.preventDefault();void operate(e.currentTarget,async()=>{const {kind,row}=editor;try{await store.save(kind,inputObject(),row);}catch(error){$('editorError').hidden=false;$('editorError').textContent=error.message;throw error;}if(user){$('editorDialog').close();await load();feedback('Cambios guardados.');}});});
+$('confirmAction').addEventListener('click',e=>void operate(e.currentTarget,async()=>{if(!confirmation)return;try{if(confirmation.import){const counts=await store.importBackup(confirmation.import);$('confirmDialog').close();await load();feedback('Importación terminada: '+counts.clients+' clientes, '+counts.projects+' proyectos y '+counts.entries+' movimientos agregados.');}else{await store.remove(confirmation.kind,confirmation.row);$('confirmDialog').close();await load();feedback('Registro eliminado.');}}catch(error){$('confirmError').textContent=error.message;$('confirmError').hidden=false;throw error;}}));
+$('confirmDialog').addEventListener('close',()=>{confirmation=null;$('confirmText').textContent='';});$('confirmDialog').addEventListener('cancel',e=>{if(doing)e.preventDefault();});$('cancelConfirm').addEventListener('click',()=>{if(!doing)$('confirmDialog').close();});$('closeEditor').addEventListener('click',closeEditor);$('cancelEditor').addEventListener('click',closeEditor);
+$('menuButton').addEventListener('click',()=>{$('appMenu').showModal();$('menuButton').setAttribute('aria-expanded','true');});$('closeMenu').addEventListener('click',closeMenu);$('appMenu').addEventListener('close',()=>{$('menuButton').setAttribute('aria-expanded','false');});
+for(const b of document.querySelectorAll('[data-screen]:not(.nav-button)'))b.addEventListener('click',()=>selectScreen(b.dataset.screen));for(const b of document.querySelectorAll('[data-new]'))b.addEventListener('click',()=>openEditor(b.dataset.new));
+for(const id of ['projectSearch','projectFilter','projectClientFilter'])$(id).addEventListener('input',renderProjects);$('clientSearch').addEventListener('input',renderClients);$('financeMonth').value=monthKey();for(const id of ['financeMonth','financeCurrency'])$(id).addEventListener('change',()=>{if(!/^\d{4}-\d{2}$/.test($('financeMonth').value))$('financeMonth').value=monthKey();renderFinances();});
+function shiftMonth(delta){const [y,m]=$('financeMonth').value.split('-').map(Number);$('financeMonth').value=monthKey(new Date(y,m-1+delta,1));renderFinances();}$('prevMonth').addEventListener('click',()=>shiftMonth(-1));$('nextMonth').addEventListener('click',()=>shiftMonth(1));
+$('settingsForm').addEventListener('submit',e=>{e.preventDefault();void operate(e.currentTarget,async()=>{await store.settings({display_name:$('displayName').value,currency:$('defaultCurrency').value,goal:$('monthlyGoal').value});await load();feedback('Preferencias guardadas.');});});
+$('refreshButton').addEventListener('click',e=>void operate(e.currentTarget,load));
+$('exportButton').addEventListener('click',e=>void operate(e.currentTarget,async()=>{await load();const payload={app:'Plazo',version:3,exportedAt:new Date().toISOString(),clients:data.clients,projects:data.projects,entries:data.entries,settings:data.settings};const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));const a=el('a');a.href=url;a.download='plazo-respaldo-'+today()+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);feedback('Respaldo descargado. Guárdalo en un lugar privado.');}));
+$('importButton').addEventListener('click',()=>{$('importFile').click();});$('importFile').addEventListener('change',e=>void operate($('importButton'),async()=>{const file=e.target.files[0];if(!file)return;try{if(file.size>10000000)throw new Error('El archivo supera los 10 MB.');const payload=normalizeBackup(JSON.parse(await file.text()));confirmation={import:payload};$('confirmTitle').textContent='Importar respaldo';$('confirmText').textContent='Se agregarán hasta '+payload.clients.length+' clientes, '+payload.projects.length+' proyectos y '+payload.entries.length+' movimientos. No se borrarán datos actuales. Los registros ya importados se omiten.';$('confirmAction').textContent='Importar';$('confirmError').hidden=true;$('confirmDialog').showModal();$('cancelConfirm').focus();}finally{e.target.value='';}}));
+$('legacyForm').addEventListener('submit',e=>{e.preventDefault();void operate(e.currentTarget,async()=>{try{await legacy.unlock($('legacySecret').value.trim());const clients=await legacy.listClients();const n=await store.importEncryptedClients(clients);await load();feedback(n+' clientes antiguos importados. El respaldo cifrado se conserva.');}finally{legacy.lock();$('legacySecret').value='';}});});
+function authMode(next){if(user&&!recovery)return;stage=next;renderShell();feedback('');} $('showLogin').addEventListener('click',()=>authMode(recovery?'reset':'login'));$('showSignup').addEventListener('click',()=>authMode(recovery?'reset':'signup'));$('showForgot').addEventListener('click',()=>authMode('forgot'));$('backLogin').addEventListener('click',()=>authMode('login'));
+$('loginForm').addEventListener('submit',e=>{e.preventDefault();void operate(e.currentTarget,async()=>{const {error}=await sb.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});if(error)throw new Error('No fue posible entrar. Verifica el correo, la contraseña y la confirmación de tu cuenta.');e.target.reset();screen='panel';await refreshAuth();});});
+$('signupForm').addEventListener('submit',e=>{e.preventDefault();void operate(e.currentTarget,async()=>{const {data:auth,error}=await sb.auth.signUp({email:$('signupEmail').value.trim(),password:$('signupPassword').value,options:{emailRedirectTo:location.origin+location.pathname}});if(error)throw new Error(error.code==='over_email_send_rate_limit'?'El servicio de correo alcanzó su límite. Intenta más tarde; si persiste, contacta al administrador.':'No se pudo crear la cuenta: '+error.message);e.target.reset();if(auth?.session)await refreshAuth();else{authMode('login');feedback('Revisa tu correo para confirmar la cuenta. Después podrás iniciar sesión.');}});});
+$('forgotForm').addEventListener('submit',e=>{e.preventDefault();void operate(e.currentTarget,async()=>{const {error}=await sb.auth.resetPasswordForEmail($('forgotEmail').value.trim(),{redirectTo:location.origin+location.pathname+'?mode=reset'});if(error)throw new Error('No se pudo enviar el enlace. Intenta más tarde.');e.target.reset();feedback('Si el correo tiene una cuenta, recibirás un enlace para recuperar el acceso.');});});
+$('resetForm').addEventListener('submit',e=>{e.preventDefault();void operate(e.currentTarget,async()=>{const {error}=await sb.auth.updateUser({password:$('resetPassword').value});if(error)throw new Error('No se pudo cambiar la contraseña. Solicita otro enlace de recuperación.');await sb.auth.signOut();recovery=false;history.replaceState(null,'',location.pathname);user=null;clearData();stage='login';renderShell();feedback('Contraseña actualizada. Inicia sesión para acceder a tus datos.');});});
+$('signOutButton').addEventListener('click',e=>void operate(e.currentTarget,async()=>{const {error}=await sb.auth.signOut();if(error)throw new Error('No se pudo cerrar la sesión. Intenta de nuevo.');authEpoch++;user=null;clearData();screen='panel';stage='login';renderShell();feedback('Sesión cerrada.');}));
+const {data:{subscription}}=sb.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'){authEpoch++;user=null;clearData();stage=recovery?'reset':'login';renderShell();}else if(event==='PASSWORD_RECOVERY'){recovery=true;stage='reset';renderShell();}else if(['INITIAL_SESSION','SIGNED_IN','USER_UPDATED'].includes(event)){setTimeout(()=>{if(!doing)void refreshAuth().catch(e=>feedback(e.message,true));},0);}});
+window.addEventListener('pagehide',()=>{legacy.lock();clearData();subscription.unsubscribe();});window.addEventListener('pageshow',e=>{if(e.persisted)location.reload();});
+renderShell();void refreshAuth().catch(e=>feedback(e.message,true));

@@ -6,6 +6,7 @@ on:
       - feat/plazo-v2-private-foundation
       - main
       - fix/plazo-mobile-clients
+      - fix/plazo-original-product
   pull_request:
     paths:
       - 'tests/**'

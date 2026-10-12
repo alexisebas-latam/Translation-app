@@ -59,3 +59,8 @@ Nunca registrar o exponer contenido en claro, secretos de recuperación, credenc
 Documentación oficial:
 - https://supabase.com/docs/guides/auth
 - https://supabase.com/docs/guides/database/postgres/row-level-security
+
+
+## Modelo operativo desde 12 octubre 2026
+
+`20261012013529_plazo_management_auth_rls.sql` agrega las tablas `plazo_app_clients`, `plazo_app_projects`, `plazo_app_entries` y `plazo_app_settings`. Usan Auth + RLS de propietario; datos legibles en el servidor, sin promesa E2EE. La migración es aditiva: conserva las tablas cifradas originales. `plazo_import_backup` es SECURITY INVOKER, transaccional y aditivo. Ver `docs/product-restoration.md`.

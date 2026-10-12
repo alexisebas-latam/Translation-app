@@ -46,3 +46,8 @@ La URL y **clave publicable** del Supabase dedicado a Plazo están incorporadas 
 RLS impide acceso entre usuarios a través de la API. Los contenidos de negocio se cifran **antes** de enviarse, de modo que una consulta ordinaria de base solo encuentra ciphertext y metadatos. El servicio todavía puede observar correo de identidad, IDs, recuentos, tamaños y actividad, y el responsable del frontend podría publicar código comprometido. No hacer promesas absolutas de cero conocimiento.
 
 Los datos y claves de recuperación de los usuarios no deben compartirse con soporte ni almacenarse en logs/analítica.
+
+
+## Producto restituido
+
+La aplicación principal usa acceso directo con Supabase Auth, menú izquierdo, Panel, Proyectos, Clientes, Finanzas y Ajustes. Consulta [comportamiento, límites y validación](docs/product-restoration.md). Los módulos cifrados de la beta se conservan para recuperar los clientes antiguos; ya no bloquean el acceso cotidiano.

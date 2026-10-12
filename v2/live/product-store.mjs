@@ -1,0 +1,15 @@
+import {clientInput,projectInput,entryInput,UUID,minor,currency,text,normalizeBackup} from '../domain/management.mjs';
+const tables={clients:'plazo_app_clients',projects:'plazo_app_projects',entries:'plazo_app_entries'};
+const validators={clients:clientInput,projects:projectInput,entries:entryInput};
+function unwrap(r){if(r.error){if(r.error.code==='23503')throw new Error('Este cliente tiene proyectos o movimientos asociados. Reasígnalos antes de eliminarlo.');throw new Error('No se pudo guardar o consultar ('+(r.error.code||'conexión')+'). Intenta de nuevo.');}return r.data;}
+export function createProductStore(sb){
+ async function owner(){const {user}=unwrap(await sb.auth.getUser())||{};if(!UUID.test(user?.id)||user.is_anonymous)throw new Error('Inicia sesión para continuar.');return user.id;}
+ return {
+  async load(){const id=await owner();const responses=await Promise.all([...Object.values(tables).map(t=>sb.from(t).select('*').eq('owner_id',id).order('created_at')),sb.from('plazo_app_settings').select('*').eq('owner_id',id).maybeSingle()]);const [clients,projects,entries,settings]=responses.map(unwrap);if([...clients,...projects,...entries].some(r=>r.owner_id!==id))throw new Error('Datos de otra cuenta rechazados.');return {clients,projects,entries,settings:settings||{display_name:'',currency:'USD',goal_minor:0}};},
+  async save(kind,input,previous=null){if(!tables[kind])throw new Error('Sección desconocida.');const id=await owner(),row=validators[kind](input);let query;if(previous){if(!UUID.test(previous.id))throw new Error('Registro inválido.');query=sb.from(tables[kind]).update({...row,revision:previous.revision+1}).eq('owner_id',id).eq('id',previous.id).eq('revision',previous.revision);}else query=sb.from(tables[kind]).insert({...row,owner_id:id});const result=unwrap(await query.select('*').maybeSingle());if(!result||result.owner_id!==id)throw new Error('El registro cambió en otro dispositivo. Actualiza antes de editar.');return result;},
+  async remove(kind,row){if(!tables[kind]||!UUID.test(row.id))throw new Error('Registro inválido.');const id=await owner(),data=unwrap(await sb.from(tables[kind]).delete().eq('owner_id',id).eq('id',row.id).eq('revision',row.revision).select('id').maybeSingle());if(data?.id!==row.id)throw new Error('El registro cambió. Actualiza la lista antes de eliminar.');},
+  async settings(input){const id=await owner(),cur=currency(input.currency);unwrap(await sb.from('plazo_app_settings').upsert({owner_id:id,display_name:text(input.display_name,80,'Nombre'),currency:cur,goal_minor:minor(input.goal||'0',cur)}));},
+  async importBackup(raw){return unwrap(await sb.rpc('plazo_import_backup',{payload:normalizeBackup(raw)}));},
+  async importEncryptedClients(clients){const id=await owner();let added=0;for(const c of clients){const result=unwrap(await sb.from(tables.clients).upsert({...clientInput(c),owner_id:id,legacy_id:c.id},{onConflict:'owner_id,legacy_id',ignoreDuplicates:true}).select('id'));added+=result?.length||0;}return added;}
+ };
+}

@@ -1,146 +1,32 @@
 <!doctype html>
 <html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0B6F60">
-<meta name="description" content="Plazo: clientes de traducción con datos cifrados y acceso personal.">
-<title>Plazo · Tu espacio de traducción</title>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="manifest" href="/manifest.webmanifest">
-<link rel="stylesheet" href="/v2/live/live.css">
-<script type="module" src="/v2/live/app.mjs"></script>
-</head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#132D29"><meta name="description" content="Plazo: proyectos, clientes y finanzas para traductores."><title>Plazo · Gestión para traductores</title><link rel="icon" href="/favicon.svg"><link rel="manifest" href="/manifest.webmanifest"><link rel="stylesheet" href="/v2/live/live.css"><script type="module" src="/v2/live/app.mjs"></script></head>
 <body>
-<svg class="icon-defs" aria-hidden="true"><defs><symbol id="icon-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol><symbol id="icon-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3zM9 20v-7h6v7"/></symbol><symbol id="icon-clients" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6M17 15a5 5 0 0 1 4 5"/></symbol><symbol id="icon-shield" viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6zM8 12l3 3 5-6"/></symbol><symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="icon-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol><symbol id="icon-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol><symbol id="icon-logout" viewBox="0 0 24 24"><path d="M9 4H4v16h5M9 12h12m-4-4 4 4-4 4"/></symbol></defs></svg>
+<svg class="icon-defs" aria-hidden="true"><defs>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3zM9 20v-7h6v7"/></symbol><symbol id="i-projects" viewBox="0 0 24 24"><path d="M3 7V4h7l2 3h9v13H3zM3 11h18"/></symbol><symbol id="i-clients" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6M17 15a5 5 0 0 1 4 5"/></symbol><symbol id="i-finance" viewBox="0 0 24 24"><path d="M4 20h16M6 16v-5M12 16V4M18 16V8"/></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16M8 3v6M16 9v6M10 15v6"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol><symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol><symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5M5 8a8 8 0 0 1 14-2l1 3M19 16a8 8 0 0 1-14 2l-1-3"/></symbol>
+</defs></svg>
 <a class="skip-link" href="#mainContent">Ir al contenido</a>
-<div class="shell">
- <aside class="sidebar" aria-label="Navegación de escritorio">
-  <a class="logo" href="/" aria-label="Plazo, inicio"><span class="logo-mark">P</span>plazo.</a>
-  <nav class="side-nav" aria-label="Secciones"><button type="button" class="nav-link" data-screen="workspace"><svg class="icon" aria-hidden="true"><use href="#icon-home"/></svg><span>Inicio</span></button>
-<button type="button" class="nav-link" data-screen="clients"><svg class="icon" aria-hidden="true"><use href="#icon-clients"/></svg><span>Clientes</span></button>
-<button type="button" class="nav-link" data-screen="privacy"><svg class="icon" aria-hidden="true"><use href="#icon-shield"/></svg><span>Privacidad</span></button></nav>
-  <div class="side-bottom"><small>Plazo 2.0 · Beta</small><p>Tu información se cifra antes de guardarse.</p></div>
- </aside>
- <div class="page">
-  <header class="topbar">
-   <a class="mobile-brand" href="/">plazo.</a><p class="top-title" id="pageTitle">Tu espacio de trabajo</p>
-   <button class="icon-button menu-trigger" id="menuButton" type="button" aria-label="Abrir menú" aria-haspopup="dialog" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#icon-menu"/></svg></button>
-  </header>
-  <main class="content" id="mainContent">
-      <section id="welcome" class="welcome">
-        <div class="intro">
-          <span class="section-kicker">GESTIÓN PARA TRADUCTORES</span>
-          <h1>Menos administración.<br><em>Más tranquilidad.</em></h1>
-          <p>Organiza tus clientes en un espacio privado. El inicio de sesión es independiente de la clave que protege tus datos.</p>
-        </div>
-        <div class="auth-grid">
-          <section class="surface auth-card" aria-labelledby="authTitle">
-            <div class="step-mark">TU CUENTA</div>
-            <div class="mode-switch" role="group" aria-label="Tipo de acceso">
-              <button type="button" id="showLogin" class="mode-button selected">Ingresar</button>
-              <button type="button" id="showSignup" class="mode-button">Registrarme</button>
-            </div>
-            <h2 id="authTitle">Ingresa a Plazo</h2>
-            <form id="loginForm">
-              <label for="loginEmail">Correo electrónico</label>
-              <input id="loginEmail" type="email" autocomplete="email" required maxlength="254">
-              <label for="loginPassword">Contraseña</label>
-              <input id="loginPassword" type="password" autocomplete="current-password" required minlength="8">
-              <button class="btn btn-primary" type="submit">Ingresar a mi cuenta <span aria-hidden="true">↗</span></button>
-            </form>
-            <form id="signupForm" hidden>
-              <label for="signupEmail">Correo electrónico</label>
-              <input id="signupEmail" type="email" autocomplete="email" required maxlength="254">
-              <label for="signupPassword">Elige una contraseña (mínimo 8 caracteres)</label>
-              <input id="signupPassword" type="password" autocomplete="new-password" required minlength="8">
-              <button class="btn btn-primary" type="submit">Crear cuenta gratuita <span aria-hidden="true">↗</span></button>
-            </form>
-            <form id="forgotForm" hidden>
-              <label for="forgotEmail">Correo electrónico de tu cuenta</label>
-              <input id="forgotEmail" type="email" autocomplete="email" required>
-              <button class="btn btn-primary" type="submit">Enviar enlace de recuperación</button>
-            </form>
-            <form id="resetForm" hidden>
-              <label for="resetPassword">Nueva contraseña (mínimo 8 caracteres)</label>
-              <input id="resetPassword" type="password" autocomplete="new-password" minlength="8" required>
-              <button class="btn btn-primary" type="submit">Actualizar contraseña</button>
-            </form>
-            <button type="button" id="showForgot" class="text-action">¿Olvidaste tu contraseña?</button>
-            <button type="button" id="backLogin" class="text-action" hidden>Volver a iniciar sesión</button>
-          </section>
-          <aside class="info-surface"><span class="privacy-symbol" aria-hidden="true">✳</span>
-            <h3>La confianza<br>se diseña.</h3>
-            <p>Una contraseña para iniciar sesión. Una clave diferente para descifrar tus clientes y proyectos.</p>
-            <div class="info-divider"></div><p class="caption-light">Beta técnica: la recuperación de datos requiere conservar tu clave de recuperación.</p>
-          </aside>
-        </div>
-      </section>
-      <section id="vaultAccess" hidden>
-        <div class="intro"><p class="section-kicker">ESPACIO PERSONAL PROTEGIDO</p>
-          <h1>Tu información, <em>bajo llave.</em></h1>
-          <p id="accountEmail"></p></div>
-        <div class="auth-grid">
-          <section class="surface auth-card" id="createVaultPanel" hidden>
-            <p class="step-mark">PRIMER ACCESO</p><h2>Protege tu espacio</h2>
-            <p>Vamos a crear una clave de recuperación personal, independiente de tu contraseña. Deberás guardarla en un lugar seguro.</p>
-            <button class="btn btn-primary" type="button" id="createVaultButton">Crear bóveda privada</button>
-          </section>
-          <section class="surface auth-card" id="unlockVaultPanel" hidden>
-            <p class="step-mark">DESBLOQUEO DE DATOS</p><h2>Ingresa tu clave privada</h2>
-            <p>El servidor no puede proporcionarte esta clave. Si la pierdes y no tienes otro medio de recuperación, tus datos podrían quedar inaccesibles.</p>
-            <form id="unlockForm">
-              <label for="unlockSecret">Clave de recuperación (43 caracteres)</label>
-              <input id="unlockSecret" type="password" autocomplete="off" spellcheck="false" minlength="43" maxlength="43" required>
-              <button class="btn btn-primary" type="submit">Desbloquear mis datos</button>
-            </form>
-          </section>
-          <section class="surface auth-card" id="newRecoveryPanel" hidden>
-            <p class="step-mark">GUARDA ESTA CLAVE AHORA</p><h2>Tu clave de recuperación</h2>
-            <p>Aparece una sola vez. Si la pierdes, Plazo no podrá recuperar tus datos cifrados.</p>
-            <code id="newRecoverySecret" class="recovery-output"></code>
-            <button class="text-action" type="button" id="copyRecovery">Copiar la clave</button>
-            <label class="checkbox-line"><input type="checkbox" id="savedRecovery"> Guardé esta clave en un lugar privado y seguro.</label>
-            <button class="btn btn-primary" type="button" id="confirmRecovery" disabled>Continuar a Plazo</button>
-          </section>
-          <aside class="info-surface"><span class="privacy-symbol" aria-hidden="true">✳</span>
-            <h3>Confidencialidad<br>antes que nada.</h3>
-            <p>Los datos se descifran en este dispositivo. Tu sesión de Supabase nunca es una llave maestra para tus proyectos.</p>
-            <div class="info-divider"></div><p class="caption-light">No pegues la clave en soporte, correo ni mensajes.</p></aside>
-        </div>
-      </section>
-
-   <section id="workspace" hidden aria-labelledby="homeTitle">
-    <div class="page-heading"><div><h1 id="homeTitle">Tu espacio de trabajo</h1><p class="subcopy">Menos pasos para organizar tus clientes.</p></div></div>
-    <div class="overview-line"><div><strong id="clientCount">0</strong><span>clientes guardados</span></div><span class="secure-status"><svg class="icon" aria-hidden="true"><use href="#icon-shield"/></svg> Bóveda abierta</span></div>
-    <section class="home-start"><div class="home-symbol"><svg class="icon" aria-hidden="true"><use href="#icon-clients"/></svg></div><h2 id="homePrompt">Empieza con tu primer cliente</h2><p id="homeDescription">Guarda sus datos y ten tus contactos a mano.</p><div class="quick-actions"><button class="btn btn-primary" type="button" data-new-client><svg class="icon" aria-hidden="true"><use href="#icon-plus"/></svg> Añadir cliente</button><button class="btn btn-soft" type="button" data-screen="clients">Ver clientes</button></div></section>
-    <div class="scope-note"><strong>Qué puedes hacer ahora</strong><p>Agregar, buscar, editar y eliminar clientes. Proyectos y finanzas todavía no están disponibles en esta beta.</p></div>
-   </section>
-   <section id="clients" hidden aria-labelledby="clientsTitle">
-    <div class="page-heading"><div><h1 id="clientsTitle">Clientes</h1><p class="subcopy" id="clientTag">0 clientes</p></div><button class="btn btn-primary" type="button" data-new-client><svg class="icon" aria-hidden="true"><use href="#icon-plus"/></svg> Añadir cliente</button></div>
-    <form id="clientForm" class="client-composer" hidden>
-     <div class="composer-heading"><h2 id="clientFormTitle">Nuevo cliente</h2><button class="icon-button" id="cancelClient" type="button" aria-label="Cerrar formulario"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></button></div>
-     <div class="form-fields"><div><label for="clientName">Nombre del cliente</label><input id="clientName" autocomplete="off" maxlength="120" placeholder="Ej. Agencia Horizonte" required></div><div><label for="clientType">Tipo de cliente</label><input id="clientType" autocomplete="off" maxlength="80" placeholder="Ej. Agencia o cliente directo" value="Cliente" required></div></div>
-     <div class="composer-actions"><button class="btn btn-primary" id="saveClient" type="submit">Guardar cliente</button><button class="btn btn-soft" id="cancelClientBottom" type="button">Cancelar</button></div><p id="clientFormError" class="form-error" role="alert" hidden></p>
-    </form>
-    <div class="search-field"><label for="clientSearch">Buscar clientes</label><input id="clientSearch" type="search" placeholder="Buscar por nombre o tipo" autocomplete="off"></div>
-    <ul id="clientList" class="client-list" aria-label="Clientes privados"></ul>
-   </section>
-   <section id="privacy" hidden aria-labelledby="privacyTitle"><div class="page-heading"><div><h1 id="privacyTitle">Privacidad y recuperación</h1><p class="subcopy">Tu cuenta y tu clave cumplen funciones distintas.</p></div></div>
-    <div class="privacy-details"><article><h2>Tu cuenta</h2><p>La contraseña permite iniciar sesión. No descifra tu información.</p></article><article><h2>Tu bóveda</h2><p>Los datos de clientes se cifran en este dispositivo antes de guardarse en Supabase. La clave de recuperación permite abrirlos en otro dispositivo.</p></article><article><h2>Guarda tu clave</h2><p>Si pierdes la clave de recuperación, restablecer la contraseña no recupera tus datos cifrados.</p></article></div>
-    <p class="scope-note">Beta técnica sin auditoría de seguridad independiente. Un dispositivo comprometido o código web malicioso pueden poner en riesgo la confidencialidad.</p>
-   </section>
-   <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
-  </main>
-  <footer class="footer">Plazo 2.0 · Beta</footer>
- </div>
- <nav class="mobile-nav" aria-label="Navegación móvil"><button type="button" class="mobile-link" data-screen="workspace"><svg class="icon" aria-hidden="true"><use href="#icon-home"/></svg><span>Inicio</span></button>
-<button type="button" class="mobile-link" data-screen="clients"><svg class="icon" aria-hidden="true"><use href="#icon-clients"/></svg><span>Clientes</span></button>
-<button type="button" class="mobile-link" data-screen="privacy"><svg class="icon" aria-hidden="true"><use href="#icon-shield"/></svg><span>Privacidad</span></button></nav>
+<section id="welcome" class="auth-layout">
+ <div class="auth-story"><a class="brand" href="/"><span class="brand-mark">P</span>plazo.</a><div><h1>Más tiempo para traducir.</h1><p>Proyectos, clientes y finanzas.<br>Tu trabajo, en un mismo lugar.</p><div class="story-line"><svg class="icon"><use href="#i-projects"/></svg>Organiza entregas y cobros</div><div class="story-line"><svg class="icon"><use href="#i-finance"/></svg>Sigue los números de tu negocio</div></div><small>Plazo 2.0 · Beta técnica</small></div>
+ <div class="auth-column"><div class="auth-card"><div class="mobile-brand brand"><span class="brand-mark">P</span>plazo.</div><h2 id="authTitle">Ingresa a Plazo</h2><p id="authHint" class="muted">Continúa donde dejaste tu trabajo.</p><div class="auth-tabs"><button id="showLogin" type="button">Iniciar sesión</button><button id="showSignup" type="button">Crear cuenta</button></div>
+ <form id="loginForm"><label for="loginEmail">Correo electrónico</label><input id="loginEmail" type="email" autocomplete="email" required><label for="loginPassword">Contraseña</label><input id="loginPassword" type="password" autocomplete="current-password" required><button class="btn primary" type="submit">Entrar a mi espacio</button></form>
+ <form id="signupForm" hidden><label for="signupEmail">Correo electrónico</label><input id="signupEmail" type="email" autocomplete="email" required><label for="signupPassword">Contraseña · mínimo 8 caracteres</label><input id="signupPassword" type="password" autocomplete="new-password" minlength="8" required><button class="btn primary" type="submit">Crear mi cuenta</button><p class="muted small">Recibirás un correo para confirmar tu cuenta.</p></form>
+ <form id="forgotForm" hidden><label for="forgotEmail">Correo de tu cuenta</label><input id="forgotEmail" type="email" autocomplete="email" required><button class="btn primary" type="submit">Enviar enlace de recuperación</button></form>
+ <form id="resetForm" hidden><label for="resetPassword">Nueva contraseña</label><input id="resetPassword" type="password" autocomplete="new-password" minlength="8" required><button class="btn primary" type="submit">Guardar contraseña</button></form>
+ <button id="showForgot" class="text-btn" type="button">Olvidé mi contraseña</button><button id="backLogin" class="text-btn" type="button" hidden>Volver al inicio de sesión</button><p id="authFeedback" class="feedback" role="status"></p><p class="auth-foot">Acceso personal con Supabase Auth. Los datos se guardan en el servidor y se protegen con permisos por cuenta.</p></div></div>
+</section>
+<div id="app" class="app-shell" hidden>
+ <aside class="sidebar"><a class="brand" href="/"><span class="brand-mark">P</span>plazo.</a><nav id="desktopNav" aria-label="Secciones"></nav><div class="sidebar-bottom"><div class="beta-label">Beta técnica</div><p>Tu espacio de traducción</p><button type="button" class="sidebar-account" data-screen="settings"><span id="accountInitial" class="account-avatar">P</span><span id="accountName">Mi cuenta</span></button></div></aside>
+ <div class="app-content"><header class="topbar"><div class="topbar-heading"><button id="menuButton" class="icon-btn mobile-only" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="appMenu"><svg class="icon"><use href="#i-menu"/></svg></button><span id="sectionTitle">Panel</span></div><div class="topbar-tools"><span id="syncStatus" role="status">Cargando…</span><button id="refreshButton" class="icon-btn" type="button" aria-label="Actualizar datos"><svg class="icon"><use href="#i-refresh"/></svg></button></div></header>
+ <main id="mainContent" tabindex="-1"><p id="feedback" class="feedback" role="status"></p>
+ <section id="panel" class="page"><div class="page-head"><div><h1 id="greeting">Tu trabajo, en orden.</h1><p id="todayLabel" class="muted"></p></div><button class="btn primary" type="button" data-new="projects"><svg class="icon"><use href="#i-plus"/></svg>Nuevo proyecto</button></div><div id="panelStats" class="metrics"></div><div class="panel-grid"><section class="surface deliveries"><div class="section-head"><h2>Próximas entregas</h2><button class="text-btn" data-screen="projects" type="button">Ver proyectos <svg class="icon"><use href="#i-arrow"/></svg></button></div><div id="upcomingList"></div></section><section class="surface goal-section"><h2>Tu meta del mes</h2><div id="goalContent"></div><button class="text-btn" data-screen="settings" type="button">Ajustar meta</button></section></div><section class="surface"><div class="section-head"><h2>Clientes con más ingresos</h2><span class="muted small">Cobros acumulados · <span id="topCurrency">USD</span></span></div><div id="topClients"></div></section></section>
+ <section id="projects" class="page" hidden><div class="page-head"><div><h1>Proyectos</h1><p class="muted">De la primera palabra al último cobro.</p></div><button class="btn primary" type="button" data-new="projects"><svg class="icon"><use href="#i-plus"/></svg>Nuevo proyecto</button></div><div class="filters"><label class="search-label">Buscar proyecto<input id="projectSearch" type="search" placeholder="Proyecto, cliente o idioma"></label><label>Estado<select id="projectFilter"><option value="all">Todos los estados</option><option value="pending">Pendiente</option><option value="active">En curso</option><option value="delivered">Entregado</option><option value="cancelled">Cancelado</option></select></label><label>Cliente<select id="projectClientFilter"><option value="">Todos los clientes</option></select></label></div><div id="projectList" class="surface list-surface"></div></section>
+ <section id="clients" class="page" hidden><div class="page-head"><div><h1>Clientes</h1><p class="muted">Contactos, proyectos y relación comercial.</p></div><button class="btn primary" type="button" data-new="clients"><svg class="icon"><use href="#i-plus"/></svg>Nuevo cliente</button></div><div class="filters"><label class="search-label">Buscar cliente<input id="clientSearch" type="search" placeholder="Nombre, tipo o correo"></label><span id="clientCount" class="muted count"></span></div><div id="clientList" class="surface list-surface"></div></section>
+ <section id="finances" class="page" hidden><div class="page-head"><div><h1>Finanzas</h1><p class="muted">Lo cobrado, lo gastado y lo que falta por cobrar.</p></div><button class="btn primary" type="button" data-new="entries"><svg class="icon"><use href="#i-plus"/></svg>Nuevo movimiento</button></div><div class="finance-controls"><div class="month-control"><button id="prevMonth" type="button" class="btn secondary" aria-label="Mes anterior">Anterior</button><label class="sr-only" for="financeMonth">Mes de finanzas</label><input id="financeMonth" type="month"><button id="nextMonth" type="button" class="btn secondary" aria-label="Mes siguiente">Siguiente</button></div><label>Moneda<select id="financeCurrency"><option>USD</option><option>EUR</option><option>CLP</option></select></label></div><div id="financeStats" class="metrics"></div><p id="pendingTotal" class="muted"></p><section class="surface chart-section"><div class="section-head"><h2>Ingresos y gastos</h2><span class="chart-legend"><span class="income-dot"></span>Ingresos <span class="expense-dot"></span>Gastos</span></div><div id="financeChart" class="chart" aria-label="Ingresos y gastos de los últimos seis meses"></div></section><section class="surface list-surface"><div class="section-head"><h2>Movimientos del mes</h2><span class="muted small">Los cobros de proyectos se editan en el proyecto.</span></div><div id="ledgerList"></div></section></section>
+ <section id="settings" class="page" hidden><div class="page-head"><div><h1>Ajustes y respaldo</h1><p class="muted">Tu perfil, tus preferencias y tus datos.</p></div></div><div class="settings-grid"><section class="surface"><h2>Mi espacio</h2><form id="settingsForm"><label for="displayName">Nombre para mostrar</label><input id="displayName" maxlength="80" autocomplete="given-name"><div class="field-grid"><div><label for="defaultCurrency">Moneda principal</label><select id="defaultCurrency"><option>USD</option><option>EUR</option><option>CLP</option></select></div><div><label for="monthlyGoal">Meta de ingresos del mes</label><input id="monthlyGoal" inputmode="decimal" value="0" required></div></div><p class="muted small">La meta se compara con los ingresos cobrados en esta moneda.</p><button class="btn primary" type="submit">Guardar preferencias</button></form></section><section class="surface"><h2>Respaldo de datos</h2><p>Descarga una copia de tus clientes, proyectos y movimientos. También puedes importar un respaldo de la versión original.</p><div class="button-row"><button id="exportButton" class="btn secondary" type="button">Exportar JSON</button><button id="importButton" class="btn secondary" type="button">Importar JSON</button></div><input id="importFile" type="file" accept="application/json,.json" hidden><p class="muted small">La importación agrega datos sin borrar los actuales. Un respaldo contiene información legible: guárdalo en un lugar privado.</p><details id="legacyImport"><summary>Recuperar clientes de la beta cifrada</summary><p>La clave antigua solo se necesita para esta importación. El respaldo cifrado original se conserva.</p><form id="legacyForm"><label for="legacySecret">Clave de recuperación antigua</label><input id="legacySecret" type="password" autocomplete="off" required><button class="btn secondary" type="submit">Importar mis clientes antiguos</button></form></details></section><section class="surface account-section"><h2>Cuenta y privacidad</h2><p id="signedEmail"></p><p>Inicias sesión y accedes directamente a tu espacio. Cada cuenta tiene permisos sobre sus propios datos mediante RLS.</p><p class="muted small">Esta versión guarda datos legibles en Supabase. El operador del servicio puede acceder a ellos; no es cifrado de extremo a extremo. La seguridad no cuenta con una auditoría independiente.</p><p class="muted small">Beta técnica gratuita. Las suscripciones todavía no están implementadas.</p><button id="signOutButton" class="btn secondary" type="button">Cerrar sesión</button></section></div></section>
+ </main><footer class="app-footer">Plazo 2.0 · Beta técnica</footer></div>
 </div>
-<dialog id="appMenu" class="app-menu" aria-labelledby="menuTitle"><div class="menu-heading"><h2 id="menuTitle">Menú</h2><button class="icon-button" id="closeMenu" type="button" aria-label="Cerrar menú"><svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg></button></div><nav aria-label="Menú principal"><button type="button" class="nav-link" data-screen="workspace"><svg class="icon" aria-hidden="true"><use href="#icon-home"/></svg><span>Inicio</span></button>
-<button type="button" class="nav-link" data-screen="clients"><svg class="icon" aria-hidden="true"><use href="#icon-clients"/></svg><span>Clientes</span></button>
-<button type="button" class="nav-link" data-screen="privacy"><svg class="icon" aria-hidden="true"><use href="#icon-shield"/></svg><span>Privacidad</span></button></nav><div class="menu-account" id="menuAccount" hidden><h3>Tu cuenta</h3><p id="signedEmail"></p><button class="menu-action" id="lockButton" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-lock"/></svg> Bloquear bóveda</button><button class="menu-action" id="signOutButton" type="button"><svg class="icon" aria-hidden="true"><use href="#icon-logout"/></svg> Cerrar sesión</button></div><p class="menu-version">Plazo 2.0 · Beta de clientes</p></dialog>
-<dialog id="deleteDialog" class="delete-dialog" aria-labelledby="deleteTitle"><h2 id="deleteTitle">¿Eliminar este cliente?</h2><p id="deleteClientName"></p><p>Esta acción elimina el registro guardado y no se puede deshacer.</p><div class="dialog-actions"><button class="btn btn-soft" id="cancelDelete" type="button">Conservar cliente</button><button class="btn btn-danger" id="confirmDelete" type="button">Eliminar cliente</button></div><p id="deleteError" class="form-error" role="alert" hidden></p></dialog>
-</body>
-</html>
+<dialog id="appMenu" class="drawer" aria-labelledby="menuTitle"><div class="drawer-head"><span id="menuTitle" class="brand"><span class="brand-mark">P</span>plazo.</span><button id="closeMenu" type="button" class="icon-btn" aria-label="Cerrar menú"><svg class="icon"><use href="#i-close"/></svg></button></div><nav id="mobileNav" aria-label="Secciones en celular"></nav><p class="muted small">Plazo 2.0 · Beta técnica</p></dialog>
+<dialog id="editorDialog" class="editor" aria-labelledby="editorTitle"><div class="editor-head"><h2 id="editorTitle">Nuevo registro</h2><button id="closeEditor" type="button" class="icon-btn" aria-label="Cerrar formulario"><svg class="icon"><use href="#i-close"/></svg></button></div><form id="recordForm"><div id="recordFields"></div><p id="editorError" class="feedback error" role="alert" hidden></p><div class="editor-actions"><button id="cancelEditor" type="button" class="btn secondary">Cancelar</button><button id="saveRecord" type="submit" class="btn primary">Guardar</button></div></form></dialog>
+<dialog id="confirmDialog" class="confirm-dialog" aria-labelledby="confirmTitle"><h2 id="confirmTitle">Eliminar registro</h2><p id="confirmText"></p><p id="confirmError" class="feedback error" role="alert" hidden></p><div class="button-row"><button id="cancelConfirm" class="btn secondary" type="button">Cancelar</button><button id="confirmAction" class="btn danger" type="button">Eliminar</button></div></dialog>
+</body></html>
