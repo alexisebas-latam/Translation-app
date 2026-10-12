@@ -1,11 +1,11 @@
 {
   "name": "Plazo — gestión para traductores",
   "short_name": "Plazo",
-  "description": "Clientes y proyectos privados con cifrado local",
+  "description": "Proyectos, clientes y finanzas para traductores independientes",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FCF9F3",
-  "theme_color": "#0B6F60",
+  "background_color": "#f6f7f4",
+  "theme_color": "#132d29",
   "icons": [
     {
       "src": "/favicon.svg",
