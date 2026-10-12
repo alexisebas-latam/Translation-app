@@ -22,11 +22,14 @@ export function date(value,required=false){if(value===null||value===''){if(requi
 function clientId(value){if(value==null||value==='')return null;if(!UUID.test(value))throw new Error('Cliente no válido.');return value;}
 export function clientInput(v){return {name:text(v.name,120,'Nombre',true),type:text(v.type||'Cliente',80,'Tipo'),email:text(v.email||'',254,'Correo'),notes:text(v.notes||'',4000,'Notas')};}
 export function projectInput(v){
- const cur=currency(v.currency);const total=quote(v.words,v.rate,cur);const paid=minor(v.paid||'0',cur);
+ const cur=currency(v.currency);const wordTotal=quote(v.words,v.rate,cur);const mode=v.pricing_mode||'word',hours=String(v.hours||'0');
+ if(!['word','hour','fixed'].includes(mode)||!/^\d+(?:\.\d{1,2})?$/.test(hours)||Number(hours)>1000000)throw new Error('Modalidad u horas no válidas.');
+ let total=wordTotal;if(mode==='fixed')total=minor(v.fixed_amount||'0',cur);if(mode==='hour'){const [ha,hb='']=hours.split('.'),[ra,rb='']=String(v.rate).split('.');const h=BigInt(ha)*100n+BigInt(hb.padEnd(2,'0')),r=BigInt(ra)*1000000n+BigInt(rb.padEnd(6,'0'));const n=(h*r*(cur==='CLP'?1n:100n)+50000000n)/100000000n;if(n>BigInt(Number.MAX_SAFE_INTEGER))throw new Error('Total demasiado grande.');total=Number(n);}
+ const paid=minor(v.paid||'0',cur);
  if(paid>total)throw new Error('El cobro no puede superar el total del proyecto.');
  if(!Object.hasOwn(STATUS,v.status))throw new Error('Estado no válido.');
  let due=null;if(v.due_at){due=new Date(v.due_at);if(!Number.isFinite(due.getTime()))throw new Error('Entrega no válida.');due=due.toISOString();}
- return {name:text(v.name,180,'Proyecto',true),client_id:clientId(v.client_id),language:text(v.language||'',100,'Idiomas'),service:text(v.service||'Traducción',80,'Servicio'),words:Number(v.words),rate:String(v.rate),quoted_minor:total,paid_minor:paid,currency:cur,status:v.status,due_at:due,paid_date:paid?date(v.paid_date,true):null,notes:text(v.notes||'',4000,'Notas')};
+ return {name:text(v.name,180,'Proyecto',true),client_id:clientId(v.client_id),language:text(v.language||'',100,'Idiomas'),service:text(v.service||'Traducción',80,'Servicio'),words:Number(v.words),rate:String(v.rate),pricing_mode:mode,hours:Number(hours),quoted_minor:total,paid_minor:paid,currency:cur,status:v.status,due_at:due,paid_date:paid?date(v.paid_date,true):null,notes:text(v.notes||'',4000,'Notas')};
 }
 export function entryInput(v){const cur=currency(v.currency),amount=minor(v.amount,cur);if(!amount)throw new Error('El importe debe ser mayor que cero.');if(!['income','expense'].includes(v.type))throw new Error('Tipo no válido.');return {concept:text(v.concept,180,'Concepto',true),type:v.type,amount_minor:amount,currency:cur,date:date(v.date,true),client_id:clientId(v.client_id),notes:text(v.notes||'',4000,'Notas')};}
 export function monthKey(d=new Date()){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
@@ -45,7 +48,7 @@ export function normalizeBackup(raw){
  const related=id=>{if(id==null||id==='')return null;const found=ids.get(String(id));if(!found)throw new Error('El respaldo tiene referencias a clientes que faltan.');return found;};
  const projects=raw.projects.map(p=>{
   if(isOld){const cur='USD',total=quote(p.words,p.rate,cur),paid=p.status==='pag';return {id:crypto.randomUUID(),...projectInput({name:p.name,client_id:related(p.client),language:p.lang,words:p.words,rate:String(p.rate),currency:cur,status:({pend:'pending',curso:'active',entr:'delivered',pag:'delivered'})[p.status],due_at:new Date(p.due).toISOString(),paid:paid?decimal(total,cur):'0',paid_date:paid?new Date(p.due).toISOString().slice(0,10):null,notes:p.notes||''}),legacy_id:'v1-project-'+p.id};}
-  if(!UUID.test(p.id))throw new Error('Identificador de proyecto inválido.');return {id:p.id,...projectInput({...p,client_id:related(p.client_id),paid:decimal(p.paid_minor,p.currency)}),legacy_id:p.legacy_id||null};
+  if(!UUID.test(p.id))throw new Error('Identificador de proyecto inválido.');return {id:p.id,...projectInput({...p,client_id:related(p.client_id),paid:decimal(p.paid_minor,p.currency),fixed_amount:decimal(p.quoted_minor,p.currency)}),legacy_id:p.legacy_id||null};
  });
  const entries=(raw.entries||[]).map(e=>{const oldType={ingreso:'income',gasto:'expense'};const id=isOld?crypto.randomUUID():e.id;if(!UUID.test(id))throw new Error('Identificador de movimiento inválido.');return {id,...entryInput(isOld?{...e,type:oldType[e.type]||e.type,client_id:related(e.client),currency:'USD',amount:String(e.amount),date:new Date(e.date).toISOString().slice(0,10)}:{...e,client_id:related(e.client_id),amount:decimal(e.amount_minor,e.currency)}),legacy_id:isOld?'v1-entry-'+e.id:e.legacy_id||null};});
  return {app:'Plazo',version:3,clients,projects,entries};

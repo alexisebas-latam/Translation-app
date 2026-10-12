@@ -1,30 +1,32 @@
-# Plazo 2.0 — Beta de gestión para traductores
+# Plazo 2.0 — Gestión para traductores independientes
 
-**Proyecto:** gestión profesional para traductores, con autenticación mediante Supabase y almacenamiento de datos de negocio cifrado en el cliente.
+Aplicación beta con Panel, Proyectos, Clientes, Finanzas y Ajustes. Frontend JavaScript/Vite, autenticación Supabase y PostgreSQL con permisos por propietario (RLS).
 
-**Estado:** beta técnica para pruebas, NO apta aún para comercialización ni afirmaciones de cifrado extremo a extremo auditado. No se ha integrado Hotmart.
+Alojamiento principal: https://plazo-app.pages.dev/ · despliegue automático de GitHub `main` mediante Cloudflare Pages.
 
-## Qué funciona
-- Registro con correo y contraseña, ingreso, recuperación de contraseña mediante Supabase Auth.
-- Workspace único por usuario con Row Level Security.
-- Bóveda generada y cifrada en el navegador, con clave de recuperación de 43 caracteres bajo control del usuario.
-- Creación/listado de clientes con nombres cifrados en el navegador antes de enviarlos.
-- Interfaz responsive: panel ancho de escritorio y navegación inferior para móvil.
-- Pruebas automatizadas de lógica y UI, incluida la interfaz legada en `legacy/`.
+## Funciones actuales
 
-## Qué está pendiente
-- Verificación end-to-end de dos cuentas reales, correos, configuración de redirecciones y sincronización de dispositivos físicos.
-- Diseño seguro de recuperación alternativo, conflicto de ediciones y modo offline seguro.
-- Migración completa de proyectos, tarifas y finanzas con controles de exactitud.
-- Prueba de seguridad independiente, auditoría E2EE y revisión legal de privacidad.
-- Moneda configurable, planes Free/Pro autorizados en servidor y pagos Hotmart.
-- Configuración/verificación del despliegue Cloudflare.
+- Registro con confirmación de correo, inicio de sesión y recuperación de contraseña. Acceso directo al panel después de autenticar.
+- Clientes: crear, consultar, editar, buscar y eliminar con confirmación y protección de referencias.
+- Proyectos: cliente, idiomas, tipo de servicio, volumen de palabras, horas, tarifa por palabra / por hora / precio fijo, entrega, notas, estado del trabajo y cobro acumulado.
+- Finanzas: cobros de proyectos, ingresos extras, gastos, saldo mensual y pendientes. USD, EUR y CLP se calculan por separado.
+- Perfil, meta mensual, exportación e importación JSON transaccional sin borrar datos actuales.
+- Menú izquierdo en escritorio y botón de tres líneas arriba a la izquierda en celular.
 
-## Ejecutar
-Requiere Node 22.12 o superior:
+## Privacidad y límites
+
+El propietario autorizó el modelo operativo Auth + RLS para simplificar el acceso. Los datos del producto se guardan **legibles en Supabase**: el operador del servicio puede acceder a ellos. RLS protege el acceso entre cuentas mediante la API; no equivale a cifrado de extremo a extremo ni a una auditoría independiente.
+
+Las tablas cifradas de la beta anterior permanecen intactas. En Ajustes puede importarse una sola vez el contenido antiguo usando la clave de recuperación; la clave no se envía al servidor ni se requiere para el uso cotidiano.
+
+Beta técnica, sin pagos ni planes Free/Pro comerciales. Un cobro acumulado por proyecto con una fecha; todavía no hay historial de cuotas, facturación o presupuestos. Los respaldos exportados son legibles. La configuración SMTP personalizada para registro público sigue pendiente: el correo predeterminado de Supabase tiene límites y restricciones. No se desactiva la confirmación de correo.
+
+## Desarrollo
+
+Node >=22.12.0:
 
 ```bash
-npm install
+npm ci
 npm run dev
 npm run build
 npm test
@@ -32,22 +34,11 @@ npm run test:ui
 npm run test:live
 ```
 
-La URL y **clave publicable** del Supabase dedicado a Plazo están incorporadas al cliente. Son valores públicos; **nunca** publicar una clave `service_role` o `sb_secret_`.
+El frontend solo incluye la URL y clave **publicable** de Supabase. Nunca agregar claves `service_role`, `sb_secret_` o tokens administrativos.
 
-## Recursos y procedimientos
-- [Despliegue Cloudflare y redirecciones Supabase](DEPLOYMENT.md)
-- [Base de datos y RLS](supabase/README.md)
-- [Pruebas de cifrado/importación](v2/README.md)
-- [Protocolo de autorizaciones](docs/v2-approval-gates.md)
-- [Versión 1.x congelada](legacy/index.html)
-- Estándares compartidos privados: [Desarrollo-apps-IA](https://github.com/alexisebas-latam/Desarrollo-apps-IA)
-
-## Privacidad
-RLS impide acceso entre usuarios a través de la API. Los contenidos de negocio se cifran **antes** de enviarse, de modo que una consulta ordinaria de base solo encuentra ciphertext y metadatos. El servicio todavía puede observar correo de identidad, IDs, recuentos, tamaños y actividad, y el responsable del frontend podría publicar código comprometido. No hacer promesas absolutas de cero conocimiento.
-
-Los datos y claves de recuperación de los usuarios no deben compartirse con soporte ni almacenarse en logs/analítica.
-
-
-## Producto restituido
-
-La aplicación principal usa acceso directo con Supabase Auth, menú izquierdo, Panel, Proyectos, Clientes, Finanzas y Ajustes. Consulta [comportamiento, límites y validación](docs/product-restoration.md). Los módulos cifrados de la beta se conservan para recuperar los clientes antiguos; ya no bloquean el acceso cotidiano.
+- [Comportamiento, límites y resultados](docs/product-restoration.md)
+- [Despliegue y Auth](DEPLOYMENT.md)
+- [Esquema y RLS](supabase/README.md)
+- [Original archivado](legacy/index.html)
+- [Módulos cifrados anteriores](v2/README.md)
+- Estándares: https://github.com/alexisebas-latam/Desarrollo-apps-IA

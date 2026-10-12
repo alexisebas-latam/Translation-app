@@ -4,7 +4,7 @@ El propietario autorizó restaurar Panel, Proyectos, Clientes, Finanzas y Ajuste
 
 ## Comportamiento
 
-- Proyectos: cliente opcional, idiomas, servicio, palabras, tarifa, moneda USD/EUR/CLP, entrega con hora, estado del trabajo, notas y cobro acumulado con fecha.
+- Proyectos: cliente opcional, idiomas, servicio, palabras, horas, modalidad por palabra / por hora / precio fijo, tarifa, moneda USD/EUR/CLP, entrega con hora, estado del trabajo, notas y cobro acumulado con fecha.
 - Clientes: alta, edición, búsqueda, eliminación con confirmación. Las referencias de proyectos/movimientos impiden eliminar un cliente asociado; deben reasignarse primero.
 - Finanzas: ingresos de proyectos según fecha e importe cobrados, ingresos extras, gastos, balance, pendiente de cobro, filtros de mes/moneda y comparación de seis meses. No suma monedas diferentes.
 - Panel: proyectos activos, palabras por trabajar, ingresos del mes, pendientes, próximas entregas, meta y ranking por cobros de proyectos.
@@ -20,4 +20,4 @@ Supabase correo predeterminado tiene restricciones y límites para registro púb
 
 ## Validación
 
-Resultados se actualizan al finalizar CI y verificación pública. Las pruebas de navegador usan exclusivamente datos ficticios y rutas de API simuladas; no equivalen a cuentas independientes con correo real.
+Compilación Vite local aprobada y 33 pruebas Node aprobadas (6 TODO históricas). Base real: comprobados RLS entre dos identidades mediante JWT claims de PostgreSQL, rechazo de referencias/propietarios ajenos, importación atómica, deduplicación y ausencia de permisos SELECT para anon. Pruebas transaccionales con datos sintéticos revertidos. CI y verificación pública en curso. Las pruebas de navegador usan exclusivamente datos ficticios y rutas de API simuladas; no equivalen a cuentas independientes con correo real.

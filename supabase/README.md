@@ -6,7 +6,7 @@
 **Región:** sa-east-1 (São Paulo, Brasil)
 **Plan comprobado al crear:** Free, costo de creación informado USD 0/mes.
 **Base de datos:** PostgreSQL 17, proyecto activo.
-**Estado:** esquema inicial IMPLEMENTADO en el proyecto Supabase, pero frontend / auth / sincronización aún NO conectados.
+**Estado actual:** Auth y frontend conectados; tablas operativas `plazo_app_*` con RLS agregadas en octubre 2026. Los apartados de esquema cifrado e implementación inicial se conservan como historial; ver el modelo operativo al final.
 
 > Este directorio pertenece al repositorio CANÓNICO `Translation-app`. El hub `Desarrollo-apps-IA` solo contiene estándares y auditorías.
 
@@ -35,7 +35,7 @@ Las cuentas autenticadas pueden crear y consultar su espacio y su primera bóved
 
 **Límite:** todavía faltan pruebas reales de dos sesiones (usuario A/B) y de acceso por Data API, recuperación en dispositivos independientes, validación de configuración de correo Auth y una auditoría especializada del protocolo E2EE. Un administrador privilegiado sí puede consultar ciphertext y metadatos, aunque no debería tener el secreto de recuperación.
 
-## Orden de conexión de la aplicación (pendiente)
+## Orden histórico de conexión de la beta cifrada
 1. Revisar el flujo de login deseado; propuesta inicial: correo + contraseña y confirmación de email. Pedir aprobación antes de activar cambios de configuración de correo y redirecciones.
 2. Instalar y fijar versión de `@supabase/supabase-js` + archivo lock; configurar URL y **clave publicable** del proyecto. No incluir claves de servicio.
 3. Registrarse con Auth y obtener el `auth.uid()` real.
@@ -64,3 +64,5 @@ Documentación oficial:
 ## Modelo operativo desde 12 octubre 2026
 
 `20261012013529_plazo_management_auth_rls.sql` agrega las tablas `plazo_app_clients`, `plazo_app_projects`, `plazo_app_entries` y `plazo_app_settings`. Usan Auth + RLS de propietario; datos legibles en el servidor, sin promesa E2EE. La migración es aditiva: conserva las tablas cifradas originales. `plazo_import_backup` es SECURITY INVOKER, transaccional y aditivo. Ver `docs/product-restoration.md`.
+
+`20261012020751_plazo_project_fixed_pricing.sql` agrega precio por palabra, por hora y fijo, y valida la consistencia del total en PostgreSQL.
